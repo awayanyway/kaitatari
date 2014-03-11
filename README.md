@@ -1,4 +1,4 @@
-# Jcampgreenstone
+# Kaitatari
 
 
 ## Description
@@ -10,11 +10,11 @@
 
 ## Usage
 
-Jcampdx.load_jdx(Filename, option={:simple_output =>, })
+Jcampdx.load_jdx(":filename filename :output_path  ....")
 
 ## More information
 
 ### Caveats
 
 
-Copyright (c) 2013 Tremouilhac, Pierre
+Copyright (c) 2014 Tremouilhac, Pierre

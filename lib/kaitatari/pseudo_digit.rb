@@ -60,7 +60,8 @@ module Pseudo_digit
   Regex_xread = Regexp.new(/^\s*([-+]?(?:\d*(?:\.?\d+|\.))+(?:E[-+][0-9]+)?)\s*/) #([eE][-+]?[0-9]+)?
   Regex_yread = Regexp.new(/^\s*(?:(x)?((?:[-]?\d*(?:\.?\d+|\.)|\?))+)+(?:\*(\d))?\s*/)
 
-  Regex_xyread = Regexp.new(/^\s*(?:[-+]?[0-9a-sA-Z@%]+|\?)/)
+  Regex_xyread = Regexp.new(/^\s*([-+]?(?:\d*(?:\.?\d+|\.))+(?:E[-+][0-9]+)?)[ \t,]+([-+]?(?:\d*(?:\.?\d+|\.))+(?:E[-+][0-9]+)?)\s*/)
+  #Regex_xyread = Regexp.new(/^\s*(?:[-+]?[0-9a-sA-Z@%]+|\?)/)
 
   # Regex_meta  = Regexp.new(/[^\(\)\[\]\{\}\?\*]/)
 
@@ -74,15 +75,15 @@ module Pseudo_digit
     x = firstx.to_f
     deltax = deltax.to_f
     xline << " #{x}"
-    # puts "incr#{deltax} #{count} #{firstx} #{xline}"
+    #puts "incr#{deltax} #{count} #{firstx} #{xline}"
     count.to_i.pred.times { xline << " #{x += deltax}"}
     #puts "in #{__method__} xline=#{xline}"
-    [xline, firstx]
+    [xline, x+deltax]
   end
 
   def xcheck(a=0.0, b=0.0, check3=0)
     check3 = (a.to_f.round(8) <=> b.to_f.round(8))
-    #puts "check #{a} = #{b} is #{check3 == 0}"
+    puts "check #{a} = #{b} is #{check3 == 0}"
   end
 
   def line_yyy_translator(iline, iyline="")
