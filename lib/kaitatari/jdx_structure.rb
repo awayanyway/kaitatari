@@ -20,6 +20,7 @@ module Data_structure
   Label_header_info_sym = [
     :'TITLE',
     :'JCAMP-DX',
+    :'JCAMPDX',
     :'DATA TYPE',
     :'DATA CLASS',
     :'APPLICATION',
@@ -91,11 +92,14 @@ module Data_structure
   ]
 
   Label_spectral_data_sym = [  #X++(Y..Y), X++(Y.Y), XY..XY  
+    :'PAGE',
     :'XYDATA',
     :'DATA TABLE',
     :'PEAK TABLE',
     :'XYPOINTS',
     :'PEAK ASSIGNMENT',
+    :'END NTUPLES',
+    :'END'
     
   ]
   
@@ -116,7 +120,7 @@ module Data_structure
   Regex_data_header = Regexp.new(/^(#{Label_spectral_param.join('|')})\s*=\s*/)  # lookahead  of whitespace(s) + '=':  (?=\s*=)
   Regex_data        = Regexp.new(/^(#{Label_spectral_data.join('|') })\s*=\s*/)
   Regex_headers     = Regexp.new(/^(#{Label_headers.join('|')       })\s*=\s*/)
-  Regex_header_uncl = Regexp.new(/^(.*)=\s*/)
+  Regex_header_uncl = Regexp.new(/^(\S+.*)=\s*/)
  
   Block_header  =   Struct.new(*(Label_header_info_sym ) )
   Block_sample  =   Struct.new(*(Label_sample_info_sym ) )
@@ -141,7 +145,7 @@ module Data_structure
       a=perm.pop  
       #puts "perm #{perm} \n a #{a}\n block.ldr #{block[ldr]}" # if @v_refactoring
       ##X++(Y..Y)
-      if block[ldr] =~ /^\s*\(?(#{a[0]})\+{1,2}\((#{a[1]})\.{1,2}#{a[1]}\)/
+      if block[ldr].last =~ /^\s*\(?(#{a[0]})\+{1,2}\((#{a[1]})\.{1,2}#{a[1]}\)/
          ind=[block.SYMBOL.index($1),block.SYMBOL.index($2),a[0],a[1],"xyy"]
       ##XY..XY
       elsif  block[ldr] =~ /^\s*\(?(?:(#{a[0]})(#{a[1]})\.{0,2}#{a[0]}#{a[1]}\)?\s*)/ #todo recheck this regexp
@@ -155,18 +159,31 @@ module Data_structure
     temp = ""
     size_dim = []
     #LDRs /^\s*\(?(#{a[0]})(#{a[1]})\.{0,2}(?:#{a[0]}#{a[1]})?+/ values to array
+    block[:DUMPED_COMMENT]||=[]
     ["SYMBOL","VAR_TYPE","VAR_FORM","VAR_DIM","UNITS","FIRST","LAST","MIN","MAX","FACTOR","DELTA"].each {|ldr|
-      block[ldr]= record_to_a(block[ldr])
-      size_dim << block[ldr].size
+      #puts "in method:{__method__} ldr  is #{ldr} "
+       
+     templdr = record_to_a(block[ldr]) 
+     block[:DUMPED_COMMENT] << templdr[1]
+     block[ldr]=templdr[0].flatten
+     size_dim << block[ldr].size
+     puts "#{ldr} = #{block[ldr].size}"
     }
     #XY TO SYMBOL  #NPOINTS to VARIABLE DIMENSION
     if size_dim[0] == 0
-    block[:'SYMBOL'] << "X" if ["FIRSTX","LASTX","XUNITS", "XFACTOR", "DELTAX"   ].map{|ldr| block[ldr]}.join.gsub(/\s*/, "").size > 0
-    block[:'SYMBOL'] << "Y" if ["FIRSTY","LASTY","YUNITS","MINY","MAXY"].map{|ldr| block[ldr]}.join.gsub(/\s*/, "").size > 0
-    ["X","Y"].each{|i|   ["UNITS",          "FACTOR"].each{|ldr| block[ldr] << block[ldr.prepend(i)].to_s}
-                 ["FIRST","LAST","MIN","MAX","DELTA"].each{|ldr| block[ldr] << block[ldr.concat(i)].to_s}  }
-    size_dim[0]=block[:'SYMBOL'].size
-    size_dim[0].times {block.VAR_DIM << temp} if (temp = block.NPOINTS.to_i.abs)  > 0
+       block[:'SYMBOL'] << "X" if ["FIRSTX","LASTX","XUNITS", "XFACTOR", "DELTAX"   ].map{|ldr| block[ldr]}.flatten.compact.join.gsub(/\s*/, "").size > 0
+       block[:'SYMBOL'] << "Y" if ["FIRSTY","LASTY","YUNITS","MINY","MAXY"].map{|ldr| block[ldr]}.flatten.compact.join.gsub(/\s*/, "").size > 0
+       ["X","Y"].each{|i|   ["UNITS",          "FACTOR"].each{|ldr| l="#{ldr}".prepend(i)
+                                                                    a = (block[l] && block[l][0]) || ""
+                                                                    block[ldr] << a}
+                    ["FIRST","LAST","MIN","MAX","DELTA"].each{|ldr| l="#{ldr}".concat(i)
+                                                                     a = (block[l] && block[l][0]) || ""
+                                                                    block[ldr] << a}  }
+       size_dim[0]=block[:'SYMBOL'].size
+       block.VAR_DIM ||=[]
+       if block.VAR_DIM.size < 1
+           size_dim[0].times {block.VAR_DIM << temp} if (temp = block.NPOINTS[0].to_i.abs)  > 0
+       end
     end
     
     #calculate or copy DELTA
@@ -181,11 +198,18 @@ module Data_structure
   end
 
   def record_to_a(str)
-    ## transform LDR value from string to /,/separated-array
-    temp= str.to_s.split(/\s*,\s*/)
-    temp[0]=temp[0].lstrip unless temp[0].nil?
-    #   puts "in method:{__method__} ldr entry is #{str} \n to array = #{temp}"
-    temp
+    temp_comment=[]
+    str=[str] unless str.is_a?(Array)
+    str=str.map{|e|   temp=e.to_s
+                   if temp =~ /(?=\$\$)/        
+                   temp_comment << $'.strip  if $' 
+                   temp=($`.strip == "" && nil )|| $`.split(/\s*,\s*/).map{|x| x.strip if x}
+                   else
+                    temp = temp.split(/\s*,\s*/).map{|x| x.strip if x }
+                   end
+                   }       
+      [str.flatten.compact,temp_comment] 
+    
   end
 
  def delta(block, symb="X")
