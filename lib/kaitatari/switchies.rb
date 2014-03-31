@@ -4,13 +4,13 @@ require_relative  "jdx_structure"
 
 
 class Switchies
-#todo multiblock and ntuple processing
+#todo  ntuple processing
 #todo output =[block0,block1,....] block0=[headers], block1=[[Headers?], [params],[data=x,y | x,z,y,y,y..if ntuple]]
 #output=[block0,block1,....] with block0 LDR up to new block (define by eitherblockid or already defined LDR or DATA table)
 #data=[[indep][dep]]= [[T1,T2],[]
 #todo process comment which are at the end of one LDR line 
 #todo puts comment  somewhere else  (create class comment? or comment structure duplicated from headers? comment.TITLE )
-#  todo  return unclassied ldr as a structure?
+#  
 
  
   include Data_structure
@@ -18,33 +18,39 @@ class Switchies
 
   def initialize(  option={})
   temp=option[:process]
-  ["headers","param","data","block"].each{ |opt|
-            temp =~ /(opt)((?:\s*\w*)+)(?=(headers|param|data))/ 
-            temp = $` + $' if $`
-            option[:"mod_#{opt}"]=$1.to_s.gsub(/[^ \d]/," ").split(/\s+/ ) if $1 
+
+  @process={:block => []}
+  ["header","param","data","uncl","comment","block"].each{ |opt|
+            temp =~ /(#{opt})/  
+            if $1
+            tempa= ($' && $')||""
+            tempa  =~ /(header|param|data|uncl|comment|block)/
+            @process[:"#{opt}"]=($` && $`.to_s.gsub(/[^ \.\d\w#]/," ").lstrip.rstrip.split(/\#/ ))||tempa.to_s.gsub(/[^ \.\d\w#]/," ").lstrip.rstrip.split(/\#/ )
+            end
             }
-            
- 
-   #temp=option[:extract]
   
-   @precision = (option[:precision].to_i != 0  && option[:precision].to_i) || nil
-
+   #@v=true
+   @exit =  {
+          :'Default' => -> {@line=nil}
+          }
+   
    # ground floor switch
-   @g =   { :'case_1'  => -> {switch_1},    #match ldr     ##
+    @g =  { :'case_1'  => -> {switch_1},    #match ldr     ##
             :'case_0'  => -> {switch_0},    #match comment $$
-            :'Default' => -> {puts "g no match"if @v;@line=nil}
+            :'Default' => -> {@line=nil}
           }
-    @h =@g
-
-    # 1st floor switch : processing ldr
-    @s1 = { :'case_11' => -> {switch_11},   #match LDR Regex_header
-            :'case_12' => -> {switch_12},  #match LDR Regex_header_data
-            :'case_13' => -> {switch_13},  #match LDR Regex_data
-            :'case_14' => -> {switch_14},  #match LDR Regex_header_uncl
-            :'case_0'  => -> {switch_0},
-            :'Default' => -> {puts "s1 no match" if @v;@line=nil}
+  
+    @h =@g         
+          # 1st floor switch : processing ldr
+    @s1 = { :'case_11' => -> {switch_11},   #match LDR Regex_header         header
+            :'case_12' => -> {switch_12},  #match LDR Regex_header_data     param
+            :'case_13' => -> {switch_13},  #match LDR Regex_data            data
+            :'case_14' => -> {switch_14},  #match LDR Regex_header_uncl     uncl
+            :'case_0'  => -> {switch_00},  #                                comment
+            :'Default' => -> {@line=nil}
           }
-    # 2nd floor switch  :  datapoints type
+  
+       # 2nd floor switch  :  datapoints typ
     @s2 = { :'case_21' => -> {switch_21}, #XYY
             :'case_22' => -> {switch_22}, #XY
             :'case_1'  => -> {puts "end of blocks/ntuple"; switch_exit},
@@ -61,23 +67,81 @@ class Switchies
             :'case_1'  => -> {puts "end of block/ntuple"; switch_block},
             :'case_0'  => -> {switch_0},
             :'Default' => -> {puts "s32 no match" if @v ;@line=nil}
-          }
+          }  
+   
           
-    @exit =  {
-          :'Default' => -> {@line=nil}
+   if @process.size > 1
+     puts "process trim"
+     @s1 = {:'case_11' => -> {@line=nil;switch_11},  #match LDR Regex_header
+            :'case_12' => -> {@line=nil;switch_12},  #match LDR Regex_header_data
+            :'case_13' => -> {@line=nil;switch_13},  #match LDR Regex_data
+            :'case_14' => -> {@line=nil;switch_14},  #match LDR Regex_header_uncl
+            :'case_0'  => -> {@line=nil;switch_00},  #match comment
+            :'Default' => -> {@line=nil}
           }
+     bin=100000 
+     if @process[:header] 
+      bin+=10000
+     end 
+     if @process[:param]
+       bin+=1000
+     end
+     if @process[:data]
+       bin+=100
+     end
+     if @process[:uncl]
+       bin+=10
+     end
+     if @process[:comment]
+       bin+=1
+     end
+     #puts "bin=#{bin}"
+    floor_switch(bin)
+   end
+     
+   @precision = (option[:precision].to_i != 0  && option[:precision].to_i) || nil
+
    #other instance variable def
     @block_count= -1
     reinitialize_instance_variable
     @output=[]
     @temp_current[:'BLOCK ID']=0
-  end
     
+  end
+  
+  def floor_switch(f=0)
+    f=f.to_s
+    
+    if f[1]=="1"
+    @s1[:'case_11'] =  -> {switch_11}  #match LDR Regex_header
+    end
+   
+    if f[2]=="1"
+    @s1[:'case_12'] =  -> {switch_12}
+    end
+    
+    if f[3]=="1"
+    @s1[:'case_13'] =  -> {switch_13}
+    end
+    
+    if f[4]=="1"
+    @s1[:'case_14'] =  -> {switch_14}
+    end
+    
+    if f[5]=="1"
+    @s1[:'case_0']  =  -> {switch_00} 
+    end
+    
+  end  
     
   def reinitialize_instance_variable(temp_cur=1)
-    
+    puts"#{__method__}: temp_cur (#{temp_cur})"
     @temp_h    = Block_headers.new
-    @temp_h_da = Block_data.new
+    
+    if temp_cur != 3
+    @temp_h_da = Block_data.new 
+     puts"#{__method__}: reinit temp_h_da"
+    end
     @temp_h_un = {}
     #@temp_h_un = OpenStruct.new
     @temp_current = case temp_cur
@@ -87,18 +151,18 @@ class Switchies
     when 4 then @temp_h_un  
     end
     
-    @ldr ||= 'DUMPED_COMMENT'
-    
+    @ldr ||= :DUMPED_COMMENT
     @datapoint = []
     @datatype  = ""
     @temp_data = ["",""]
     @temp = ""
     @tempx = [nil,nil]
     @tempy = ""
-    @symbol_ind = []
-    @temp_delta = 1
+    @symbol_ind = [] if temp_cur != 3
+    @temp_delta = 1 #if temp_cur != 3
     @block_count += 1
     puts @block_count
+    
   end
 
   def sw(line)
@@ -142,17 +206,42 @@ class Switchies
    
   def block_output(o=nil)
     #prepare xy data points array from strings
-    xy=Array.new(2)
-    xy=xy.map.with_index{|e,i|  if @temp_data[i] != ""
-                         data_str2arr(@temp_data[i],@temp_h_da.FACTOR.fetch(@symbol_ind[i+2].to_i).to_f,@precision)
-                         end}
+    
     #merge structure while removing empty field
     output_hash={}
-    [@temp_h,@temp_h_un,@temp_h_da].each{|s| s.each_pair{|k,v| output_hash[k]=v if !v.nil?}}   
-    @output << [output_hash,[@symbol_ind[0..1],xy]] 
+    [@temp_h,@temp_h_un].each{|s| s.each_pair{|k,v| output_hash[k]=v if !v.nil?}}   
+    @output << [output_hash,[],[]] 
+    puts"#{__method__}: "
+    if o
+    puts"#{__method__}: reinitialize_instance_variable(#{o})"
     reinitialize_instance_variable(o)
+    end
    end
    
+   def block_output_data
+    #prepare xy data points array from strings
+    
+    puts   "@output.last[1] #{@output.last[1]}"
+    puts   " #{@symbol_ind[0..1]}"
+    puts"#{__method__}: @temp_h_da \n #{@temp_h_da}"
+    xy=Array.new(2).map.with_index{|e,i|  if @temp_data[i] != ""
+                         data_str2arr(@temp_data[i],@temp_h_da.FACTOR.fetch(@symbol_ind[i+2].to_i).to_f,@precision)
+                         end}
+    [@temp_h_da].each{|s| s.each_pair{|k,v| @output.last[0][k]=v if !v.nil?}}
+    
+    @output.last[1] << @symbol_ind[0..1]
+    @output.last[2] << xy 
+    
+    @ldr ||= :DUMPED_COMMENT
+    @datapoint = []
+    @temp_data = ["",""]
+    @temp = ""
+    @tempx = [nil,nil]
+    @tempy = ""
+    @symbol_ind = [] 
+    
+    #reinitialize_instance_variable(3)
+   end
   ######## def cases
 
   def Default
@@ -160,7 +249,8 @@ class Switchies
   end
 
   def case_0
-    /^\s*($$)+\s*(.*)/ =~ @line
+   # puts "#{__method__}"
+    /^\s*\$\$\s*(.*)/ =~ @line && @line=$1.rstrip
   end
 
   def case_1
@@ -202,9 +292,8 @@ class Switchies
  
   #### def switches: process lines, lift to switch levels, change mood
   def switch_block
-    block_output
+    block_output_data
     @h=@g
-    
   end
   
   def switch_exit
@@ -212,8 +301,19 @@ class Switchies
   end
   
   def switch_0
-    @temp_current[@ldr] << @line.rstrip   
-    # puts "#{__method__} switch11: blank or comment writing (#{@line.rstrip.chomp}) in (#{@ldr})"  if @v_s 
+    #puts "#{__method__}:  writing (#{@line.rstrip.chomp}) in (#{@ldr})"
+    if @line.to_s != ""
+    @temp_current[@ldr] <<   "$$"+@line.strip if @temp_current[@ldr] 
+    end
+    @line = nil 
+  end
+ 
+  def switch_00
+    if @line.to_s != ""
+    @temp_current[@ldr] <<   "$$"+@line.strip if @temp_current[@ldr] 
+    end
+    @line = nil
+    @h=@g
   end
 
   def switch_1
@@ -221,53 +321,80 @@ class Switchies
   end
 
   def switch_11
-    #puts "#{__method__}: known ldr writing (#{@line.rstrip.chomp}) in (#{@ldr})" if @v_s
     @temp_current = @temp_h
-    block_output(1) if @temp_current[@ldr].to_s != ""
-    @temp_current[@ldr] = @line.rstrip
-    @line=""
+    block_output(1) if @temp_current[@ldr]
+    @temp_current[@ldr] = [@line.strip] if @line
+    @line=nil
     @h=@g
   end
 
   def switch_12
-    #puts "#{__method__}: known param ldr writing (#{@line.rstrip.chomp}) in (#{@ldr.rstrip.chomp})"  if @v_s
     @temp_current = @temp_h_da
-    block_output(2) if @temp_current[@ldr].to_s != ""
-    @temp_current[@ldr] = @line.rstrip
-    @line=""
+    block_output(2) if @temp_current[@ldr]
+    @temp_current[@ldr] = [@line.strip] if @line
+    @line=nil
     @h=@g
   end
 
   def switch_13
-    #puts "#{__method__}: preparing for reading (#{@ldr}) of type (#{@line}) \n refactoring param   " if @v_s
     @temp_current = @temp_h_da
-    block_output(3) if @temp_current[@ldr].to_s != ""
-    @temp_current[@ldr] = @line.rstrip
-    block_refactoring(@temp_current)
-    @symbol_ind=regex_data_table(@temp_current,@ldr)   
-    #puts "@symbol_ind is #{@symbol_ind}" 
-    @mod=@symbol_ind.pop
-    @h = @s2 
-    puts @mod
-    @tempx[1] = @temp_current.FIRST.fetch(@symbol_ind[0])
-    @temp_delta= @temp_current.DELTA.fetch(@symbol_ind[0]).to_f / @temp_current.FACTOR.fetch(@symbol_ind[0]).to_f
-    @line=""
-    #@temp_current.each_pair{|k ,v| puts "#{k}#{" "*(20-k.size)}  =  #{v}"}  if @v_s
-    #puts "symbol_ind #{@symbol_ind}"                                     if @v_s
+    
+    
+    if @ldr == 'PAGE'
+       if @line
+          @temp_current[@ldr] ||= []
+          @temp_current[@ldr] << @line.strip
+          
+       end
+       puts "#{__method__}:hello #{@ldr} :#{@temp_current[@ldr]}"
+       @h = @g  
+    else 
+
+       if @line
+         @temp_current[@ldr] ||= []
+         @temp_current[@ldr] << @line.strip
+         puts "#{__method__}:hello #{@ldr} :#{@temp_current[@ldr]}"
+         if  (@temp_current[:'PAGE'] && @temp_current[:'PAGE'].size == 1) || !@temp_current[:'PAGE']          
+           block_refactoring(@temp_current) 
+         end
+          
+         #puts @temp_current
+         
+         @symbol_ind=regex_data_table(@temp_current,@ldr)    
+         puts "youre here @symb #{@symbol_ind}"
+         @mod=@symbol_ind.pop
+          
+         
+         @tempx[1] = @temp_current.FIRST.fetch(@symbol_ind[0])
+         @temp_delta= @temp_current.DELTA.fetch(@symbol_ind[0]).to_f / @temp_current.FACTOR.fetch(@symbol_ind[0]).to_f
+         
+       end
+       @h = @s2
+       
+       if (@temp_current[:'PAGE'] && @temp_current[:'PAGE'].size == 1) || !@temp_current[:'PAGE']
+        puts "#{__method__}:hello output"
+        block_output(3) 
+       end
+      
+    end    
+    puts "#{__method__}:end #{@ldr} :#{@temp_current[@ldr]}"
+   
+    @line=nil
+    
+    #@temp_current.each_pair{|k ,v| puts "#{k}#{" "*(20-k.size)}  =  #{v}"}  
+    #puts "symbol_ind #{@symbol_ind}"                                     
     
   end
 
   def switch_14
-    #puts "#{__method__}: unknown ldr writing (#{@line.rstrip.chomp}) in (#{@ldr.rstrip.chomp})"   if @v_s
     @temp_current = @temp_h_un
-    block_output(4) if @temp_current[@ldr].to_s != ""
-    @temp_current[@ldr] = @line.rstrip
+    @ldr=@ldr.to_sym
+    block_output(4) if @temp_current[@ldr]
+    @temp_current[@ldr] = [@line.strip] if @line
     @line=nil
     @h=@g
   end
  
- 
-  ##maybe should match first is .a..(=)..b. then check if a known , instead of matching (a)..=.. then
 
   def switch_21
    # puts "#{__method__}:"
