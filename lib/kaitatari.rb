@@ -96,13 +96,14 @@ class Jcampdx
     puts "#{__method__}: with #{@option_hash[:file]}"
     file=@option_hash[:file]
     line_switcher=Switchies.new(@option_hash)
-    File.foreach(file){|line|  line_switcher.sw(line)}
+    File.foreach(file){|line| 
+      line_switcher.sw(line)}
     puts "#{__method__}: processing file over"
     @data_output=line_switcher.output 
   end
 
   def output_kaitatari
-    output_rb      if @option_hash[:output]  =~ /\s*(on| rb|ruby)\s*/
+    output_rb      if @option_hash[:output]  =~ /\s*(on|rb|ruby)\s*/
     output_txt     if @option_hash[:output]  =~ /\s*(text|txt)\s*/
     output_yaml    if @option_hash[:output]  =~ /\s*yaml\s*/
     output_marshal if @option_hash[:output]  =~ /\s*(msh|marshal)\s*/
@@ -192,15 +193,16 @@ class Jcampdx
     #wicked  treatment of args
     
     temp_hash={:temp => []}
-   #.gsub(/\s-\b/,":")
-    a=a.to_s.gsub(/[;'"<>=*&%\^$#\@~`|,\[\]\{\}]/, " ").gsub(/\s+/," ").split(/(?<=\w) (?=:\w)/).map{|e| e=[$1.to_sym,$'.lstrip.rstrip] if e =~ /:(\w+)/}.flatten
+   #.gsub(/\s-\b/,":")   
+   a=a.to_s.gsub(/[;'"<>=*&%\^$\@~`|,\[\]\{\}]/, " ").gsub(/\s+/," ").split(/(?<=\w) (?=:\w)/).map{|e| e=[$1.to_sym,$'.lstrip.rstrip] if e =~ /:(\w+)/}.flatten
+
     #puts "#{__method__}:2: a was #{a}"
     while a != []
            temp_hash[a.slice!(0)]=a.slice!(0)
     end
     @option_hash.delete(:file)
     @option_hash=@option_hash.merge(temp_hash)
-    puts " #{__method__}:2:@option_hash now = #{@option_hash}"
+    #puts " #{__method__}:2:@option_hash now = #{@option_hash}"
     if @option_hash[:file] && !@option_hash[:file].to_s =~ /samples\/TEST/
        @option_hash[:filename] = File.basename(@option_hash[:file])
        @option_hash[:path]     = (@option_hash[:file] =~ /#{@option_hash[:filename]}\z/ && $`)
