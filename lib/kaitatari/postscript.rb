@@ -25,8 +25,8 @@ attr_reader :output_text
    #in points values
    @graph=Array.new(4){|i| (@size_point[i.modulo(2)]* @graph_position[i]).round }
    if opt[:data]
-     opt[:data_x]=opt[:data][1][1][0]
-     opt[:data_y]=opt[:data][1][1][1]
+     opt[:data_x]=opt[:data][2][0][0]
+     opt[:data_y]=opt[:data][2][0][1]
      @ldr=opt[:data][0]
    end
    @data_x= opt[:data_x] || [0]
