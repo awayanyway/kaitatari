@@ -29,43 +29,42 @@ class Switchies
             end
             }
   
-   #@v=true
-   @exit =  {
-          :'Default' => -> {@line=nil}
+   @v=true
+   @exit = {:'Default' => -> {@line=nil}
           }
    
    # ground floor switch
-    @g =  { :'case_1'  => -> {switch_1},    #match ldr     ##
-            :'case_0'  => -> {switch_0},    #match comment $$
-            :'Default' => -> {@line=nil}
+    @g =  { :'case_1'  => -> {puts "@g:case_1" if @v;switch_1},    #match ldr     ##
+            :'case_0'  => -> {puts "@g:case_0" if @v;switch_0},    #match comment $$
+            :'Default' => -> {puts "@g: def" if @v;@line=nil}
           }
   
     @h =@g         
           # 1st floor switch : processing ldr
-    @s1 = { :'case_11' => -> {switch_11},   #match LDR Regex_header         header
-            :'case_12' => -> {switch_12},  #match LDR Regex_header_data     param
-            :'case_13' => -> {switch_13},  #match LDR Regex_data            data
-            :'case_14' => -> {switch_14},  #match LDR Regex_header_uncl     uncl
-            :'case_0'  => -> {switch_00},  #                                comment
-            :'Default' => -> {@line=nil}
+    @s1 = { :'case_11' => -> {puts "@s1:case_11" if @v;switch_11},   #match LDR Regex_header         header
+            :'case_12' => -> {puts "@s1:case_12" if @v;switch_12},  #match LDR Regex_header_data     param
+            :'case_13' => -> {puts "@s1:case_13" if @v;switch_13},  #match LDR Regex_data            data
+            :'case_14' => -> {puts "@s1:case_14" if @v;switch_14},  #match LDR Regex_header_uncl     uncl
+            :'case_0'  => -> {puts "@s1:case_0"  if @v;switch_00},  #                                comment
+            :'Default' => -> {puts "@s1:def"     if @v;@line=nil}
           }
   
        # 2nd floor switch  :  datapoints typ
-    @s2 = { :'case_21' => -> {switch_21}, #XYY
-            :'case_22' => -> {switch_22}, #XY
-            :'case_1'  => -> {puts "end of blocks/ntuple"; switch_exit},
-            :'case_0'  => -> {switch_0},
+    @s2 = { :'case_21' => -> {puts "@s2:case_21" if @v;switch_21}, #XYY
+            :'case_22' => -> {puts "@s2:case_22" if @v;switch_22}, #XY
+            :'case_1'  => -> {puts "@s2:case_1"  if @v;puts "end of blocks/ntuple"; switch_exit},
+            :'case_0'  => -> {puts "@s2:case_0"  if @v;switch_0},
             :'Default' => -> {puts "s2 no match" if @v ;@line=nil}
           }
     # 3rd floor switch  : processing datapoints
-    @s31 = {:'case_31' => -> {switch_31},  #match/retrieve x =  +/- 1234.56e+/-123
-            :'case_1'  => -> {puts "end of block/ntuple"; switch_block},
-            :'case_0'  => -> {switch_0},
-            :'Default' => -> {puts "s31 no match" if @v ;@line=nil}
+    @s31 = {:'case_31' => -> {puts "@s31:case_31" if @v;switch_31},  #match/retrieve x =  +/- 1234.56e+/-123
+            :'case_1'  => -> {puts "@s31:case_1"  if @v;puts "end of block/ntuple"; switch_block},
+            :'case_0'  => -> {puts "@s31:case_0"  if @v;switch_0},
+            :'Default' => -> {puts "@s31 no match" if @v ;@line=nil}
           }
-    @s32 = {:'case_32' => -> {switch_32},
-            :'case_1'  => -> {puts "end of block/ntuple"; switch_block},
-            :'case_0'  => -> {switch_0},
+    @s32 = {:'case_32' => -> {puts "@s32:case_32" if @v;switch_32},
+            :'case_1'  => -> {puts "@s32:case_1, end of block/ntuple"; switch_block},
+            :'case_0'  => -> {puts "@s32:case_0"  if @v;switch_0},
             :'Default' => -> {puts "s32 no match" if @v ;@line=nil}
           }  
    
@@ -221,8 +220,8 @@ class Switchies
    def block_output_data
     #prepare xy data points array from strings
     
-    puts   "@output.last[1] #{@output.last[1]}"
-    puts   " #{@symbol_ind[0..1]}"
+    #puts   "@output.last[1] #{@output.last[1]}"
+    #puts   " #{@symbol_ind[0..1]}"
     puts"#{__method__}: @temp_h_da \n #{@temp_h_da}"
     xy=Array.new(2).map.with_index{|e,i|  if @temp_data[i] != ""
                          data_str2arr(@temp_data[i],@temp_h_da.FACTOR.fetch(@symbol_ind[i+2].to_i).to_f,@precision)
@@ -293,7 +292,7 @@ class Switchies
   #### def switches: process lines, lift to switch levels, change mood
   def switch_block
     block_output_data
-    @h=@g
+    @h=@s1
   end
   
   def switch_exit
@@ -321,6 +320,7 @@ class Switchies
   end
 
   def switch_11
+    puts "#{@ldr} #{@line}" if @v
     @temp_current = @temp_h
     block_output(1) if @temp_current[@ldr]
     @temp_current[@ldr] = [@line.strip] if @line
@@ -329,6 +329,7 @@ class Switchies
   end
 
   def switch_12
+    puts "#{@ldr} #{@line}" if @v
     @temp_current = @temp_h_da
     block_output(2) if @temp_current[@ldr]
     @temp_current[@ldr] = [@line.strip] if @line
@@ -337,6 +338,7 @@ class Switchies
   end
 
   def switch_13
+    puts "#{@ldr} #{@line}" if @v
     @temp_current = @temp_h_da
     
     
@@ -348,7 +350,15 @@ class Switchies
        end
        puts "#{__method__}:hello #{@ldr} :#{@temp_current[@ldr]}"
        @h = @g  
-    else 
+    elsif
+      @ldr =~ /END/
+      if @line
+      @temp_current[@ldr] ||= []
+      @temp_current[@ldr] << @line.strip
+      end
+      @h = @g 
+      block_output(3) 
+    else
 
        if @line
          @temp_current[@ldr] ||= []
@@ -367,9 +377,9 @@ class Switchies
          
          @tempx[1] = @temp_current.FIRST.fetch(@symbol_ind[0])
          @temp_delta= @temp_current.DELTA.fetch(@symbol_ind[0]).to_f / @temp_current.FACTOR.fetch(@symbol_ind[0]).to_f
-         
+        
        end
-       @h = @s2
+        @h = @s2 
        
        if (@temp_current[:'PAGE'] && @temp_current[:'PAGE'].size == 1) || !@temp_current[:'PAGE']
         puts "#{__method__}:hello output"
@@ -387,6 +397,7 @@ class Switchies
   end
 
   def switch_14
+    puts "#{@ldr} #{@line}" if @v
     @temp_current = @temp_h_un
     @ldr=@ldr.to_sym
     block_output(4) if @temp_current[@ldr]
@@ -398,19 +409,20 @@ class Switchies
 
   def switch_21
    # puts "#{__method__}:"
-    
+   puts "#{@ldr} #{@line}" if @v
     @h=@s31
   end
   
   
   def switch_22
  # puts "#{__method__}:"
-    
+   puts "#{@ldr} #{@line}"if @v
     @h=@s32
 
   end
 
   def switch_31
+    puts "#{@ldr} #{@line}" if @v
     #  puts "#{__method__}:"
     #todo in some file the first x of each dta line is rounded so might want to use FIRSTX and increment  only
     @tempy = line_yyy_translator(@line ) 
@@ -427,19 +439,19 @@ class Switchies
   
   
   def switch_32
+    puts "#{@ldr} #{@line}" if @v
     #puts "#{__method__}:"
     @temp_data[1]<< "#{@temp.pop} "
     @temp_data[0]<< "#{@temp.pop} "
   end
 
   
-
-  def m(arg) # (modify line or mod from outside and return object)
-    #@line=arg if arg.is_a?(Array)
-    @line = arg if arg.is_a?(String)
-    @mod  = arg if arg.is_a?(Symbol)
-    return self
-  end
+def m(arg) # (modify line or mod from outside and return object)
+  #@line=arg if arg.is_a?(Array)
+  @line = arg if arg.is_a?(String)
+  @mod  = arg if arg.is_a?(Symbol)
+  return self
+end
 
    
   
