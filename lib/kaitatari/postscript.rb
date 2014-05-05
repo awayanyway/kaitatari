@@ -3,6 +3,9 @@ class Postscript_output
 attr_reader :output_text 
  
  def initialize(opt={})
+   # 
+    
+   p = opt[:page] || 0   
    opt[:size] ||= [11.7,8.3,"inch"] 
    @size=(opt[:size][0].is_a?(Float) && opt[:size][1].is_a?(Float) && opt[:size]) || [11.7,8.3, "inch"] 
    @scale = (opt[:size][2] =~ /(inch|mm|cm|m)/ && $1 ) || (opt[:scale] =~ /(inch|mm|cm|m)/ && $1 ) || "inch"
@@ -24,20 +27,46 @@ attr_reader :output_text
    @graph_position=opt[:graph_position] || [1/20.0,1/20.0,15/20.0,18/20.0]  
    #in points values
    @graph=Array.new(4){|i| (@size_point[i.modulo(2)]* @graph_position[i]).round }
+   
+   
    if opt[:data]
-     opt[:data_x]=opt[:data][2][0][0]
-     opt[:data_y]=opt[:data][2][0][1]
-     @ldr=opt[:data][0]
+     #opt[:data_x]=opt[:data][2][0][0]  
+     if !opt[:data_y]
+        if    opt[:data][:raw_point]        && opt[:data][:raw_point][0]       && opt[:data][:raw_point][0][:y].size >0 
+              opt[:data_y] =  opt[:data][:raw_point][0][:y] 
+              opt[:data_x] = (opt[:data][:raw_point][0][:x].size       == opt[:data_y].size && opt[:data][:raw_point][0][:x])       || [*1..opt[:data_y].size]
+        end
+     end
+     if opt[:point].to_s =~ /processed/
+        if    opt[:data][:processed_point]  && opt[:data][:processed_point][0] && opt[:data][:processed_point][0][:y].size >0 
+              opt[:data_y] =  opt[:data][:processed_point][0][:y]
+              opt[:data_x] = (opt[:data][:processed_point][0][:x].size == opt[:data_y].size && opt[:data][:processed_point][0][:x]) || [*1..opt[:data_y].size]
+        elsif opt[:data][:raw_point]        && opt[:data][:raw_point][0]       && opt[:data][:raw_point][0][:y].size >0 
+              opt[:data_y] =  opt[:data][:raw_point][0][:y] 
+              opt[:data_x] = (opt[:data][:raw_point][0][:x].size       == opt[:data_y].size && opt[:data][:raw_point][0][:x])       || [*1..opt[:data_y].size]
+        end
+     end
+     opt[:ldr]=opt[:data][:h]
    end
-   @data_x= opt[:data_x] || [0]
-   @data_y= opt[:data_y] || [0]
+   
+   @margin = opt[:margin]||[0.0,0.0] 
+   f_log @margin
+   @offset ||=[0,0]
+   @ldr = opt[:ldr] || {:'TITLE'=> "?"}
+   @data_y= opt[:data_y] || [1]
+   @data_x= opt[:data_x] || [*1..opt[:data_y].size]
+   f_log " x: #{@data_x[0..[10,@data_x.size].min]}\ny: #{@data_y[0..[10,@data_y.size].min]}"
    @xy_arr= @data_x.zip(@data_y) 
    @output_file=opt[:output_file] 
    @output_text = "%!PS-Adobe-3.0\n"
-   @output_text << "<< \/PageSize [#{@size_point[0]} #{@size_point[1]}]/Orientation 0 >> setpagedevice\n"
+   o=opt[:orientation].to_s
+   o=0 unless o =~ /\A0|1|2|3\z/ 
+   @output_text << "<< \/PageSize [#{@size_point[0]} #{@size_point[1]}]/Orientation #{o} >> setpagedevice\n"
    #@output_text<<"90 rotate 0 -#{@size_point[1]} translate\n" if @rotate  
-   
    @scaling=72.0/@resolution.round(5)
+   @fx=(@graph[2]-@graph[0])*@resolution/72.0 * (1-@margin[0])
+   @fy=(@graph[3]-@graph[1])*@resolution/72.0 * (1-@margin[1])
+   @f=[@fx,@fy]
  end
  
   def jdx2ps
@@ -57,36 +86,30 @@ end
 
 
  private
- def data_to_point(data_array,axe=0,margin=0.0)
-   #data points are scaled to integer values and offset to the graph windows
-  # puts "@size=#{@size} @scale=#{@scale} @size_point=#{@size_point} 
-  #  @resolution=#{@resolution} @graph_position=#{@graph_position}
-  # @graph=#{@graph}"
+ def data_to_point(data_array=@data_x,axe=0,margin=@margin[0])
+   #data points are scaled to integer values and offset to the graph window
+   max,min=data_array.max,data_array.min
+   f= @f[axe]/ (max-min)
+   #f_log "axe=#{axe} min =#{min} max=#{max} f=#{f} \n #{@graph}"
+   a=data_array.map{|e| ((e-min) * f ).round}  #+ @graph[axe]
    
-   max=data_array.max
-   min=data_array.min
-   d=max-min
-   f=(@graph[axe+2]-@graph[axe])*@resolution/72.0 * (1-margin) / (d)
-   #puts "axe=#{axe} min =#{min} max=#{max} f=#{f} \n #{@graph}"
-   a=data_array.map{|e| ((e-min) * f + @graph[axe]).round}
-   #a=data_array.map{|e| ((e-min) * f ).round}
    return a
  end
 
  
- def prepare_xyarr(x=@data_x,y=@data_y,margin=0.1) 
-   @xy_arr = data_to_point(x).zip(data_to_point(y,1,margin))
+ def prepare_xyarr(x=@data_x,y=@data_y,margin=[0,0]) 
+   @xy_arr = data_to_point(x,0,margin[0]).zip(data_to_point(y,1,margin[1]))
    return @xy_arr
  end
  
  def write_ldr
     
     x,y = @graph[2],@graph[3]
-    t= "/Arial findfont\n12 scalefont\nsetfont\nnewpath\n"
+    t= "/Arial findfont\n8 scalefont\nsetfont\nnewpath\n"
     t<< "#{x} #{y} moveto\n"
     @ldr.each_pair{|k,v|
                 if v.is_a?(Array)
-                val=v.join(", ")
+                val=v.join("\n")
                 else
                 val=v
                 end
@@ -94,6 +117,7 @@ end
                 }
    @output_text << t
    end
+   
  def draw_box
    t = "newpath \n#{@graph[0]} #{@graph[1]} moveto\n"
    t << "  #{@graph[0]} #{@graph[1]} #{@graph[0]} #{@graph[3]} #{@graph[2]} #{@graph[3]} #{@graph[2]} #{@graph[1]} lineto lineto lineto lineto\n"

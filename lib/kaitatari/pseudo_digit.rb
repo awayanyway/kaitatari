@@ -60,7 +60,7 @@ module Pseudo_digit
   Regex_xread = Regexp.new(/^\s*([-+]?(?:\d*(?:\.?\d+|\.))+(?:E[-+][0-9]+)?)\s*/) #([eE][-+]?[0-9]+)?
   Regex_yread = Regexp.new(/^\s*(?:(x)?((?:[-]?\d*(?:\.?\d+|\.)|\?))+)+(?:\*(\d))?\s*/)
 
-  Regex_xyread = Regexp.new(/^\s*([-+]?(?:\d*(?:\.?\d+|\.))+(?:E[-+][0-9]+)?)[ \t,]+([-+]?(?:\d*(?:\.?\d+|\.))+(?:E[-+][0-9]+)?)\s*/)
+  Regex_xyread = Regexp.new(/^\s*([-+]?(?:\d*(?:\.?\d+|\.))+(?:[Ee][-+][0-9]+)?)[ \t,]+([-+]?(?:\d*(?:\.?\d+|\.))+(?:[Ee][-+][0-9]+)?)\s*/)
   #Regex_xyread = Regexp.new(/^\s*(?:[-+]?[0-9a-sA-Z@%]+|\?)/)
 
   # Regex_meta  = Regexp.new(/[^\(\)\[\]\{\}\?\*]/)
@@ -71,44 +71,42 @@ module Pseudo_digit
     $1
   end
 
-  def xline_generator(firstx, count, deltax=1.0, xline="") # float ,integer, float, string
-    x = firstx.to_f
-    deltax = deltax.to_f
-    xline << " #{x}"
-    #puts "incr#{deltax} #{count} #{firstx} #{xline}"
-    count.to_i.pred.times { xline << " #{x += deltax}"}
-    #puts "in #{__method__} xline=#{xline}"
-    [xline, x+deltax]
+  def xline_generator(firstx, count, deltax=1.0, xline=[]) # float ,integer, float, string
+    #x = firstx.to_f
+    #deltax = deltax.to_f
+    #xline = [x]
+    xline = [firstx]
+    count.to_i.pred.times{xline << (firstx += deltax) } #{ xline << " #{x += deltax}"}
+    xline
   end
 
-  def xcheck(a=0.0, b=0.0, check3=0)
+  def checkpoint(a=0.0, b=0.0,s="x", diff=0)
     check3 = (a.to_f.round(8) <=> b.to_f.round(8))
-    puts "check #{a} = #{b} is #{check3 == 0}"
+   # f_log "check <#{s}> #{a} = #{b} is #{check3 == diff}"
+    check3 == diff
   end
 
-  def line_yyy_translator(iline, iyline="")
-    #puts"in meth #{__method__}line gsub #{iline.gsub(Regex_sub, Pseudo_digit)}"
+  def line_yyy_translator(iline, iyline=[])
     iline= iline.gsub(Regex_sub, Pseudo_digit).match(Regex_yread)
-    #puts iline
-    #puts "(#{($1.nil? &&  "nil") || $1}) (#{($2.nil? &&  "nil") || $2})(#{($3.nil? &&  "nil") || $3})"
+    ## DIFFERENCE Form (DIF) check for last y value of the line
+    diff =false
+    ##
     count = 0
     sumy = 0.0
+    
     while $2.to_s != ""
       [ $3.to_i , 1].max.times {
-        sumy =  ( $1.nil?  &&  $2.to_s ) || $2.to_f + sumy.to_f # sumy.to_f needed if summy was ? and $1 is now x)
-        #sumy = "?"  if $1 == "?"
-     #   puts "(#{($1.nil? &&  "nil") || $1}) (#{($2.nil? &&  "nil") || $2})(#{($3.nil? &&  "nil") || $3})"
-        iyline << " #{sumy}"
-      #  puts iyline
+        diff = $1=="x"
+        y= $2.to_f # if 
+        sumy =  ( !diff  &&  y ) || y + sumy.to_f # sumy.to_f needed if summy was ? and $1 is now x)
+        
+        iyline << sumy
         count += 1
       }
-      #puts " (#{$1}) (sumy#{sumy} : #{$2}\$2)(#{$3})"
-      # puts "line is #{iline}" if (count+1).modulo(4) == 0.0
       $'.match(Regex_yread)
-   
     end
-#puts "in #{__method__} yline=#{iyline}"
-    [ iyline, count.to_i, sumy]
+    
+    [iyline, count,diff]
   end
 
 end

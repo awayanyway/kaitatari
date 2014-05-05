@@ -13,10 +13,15 @@
 # end
 #
 class Struct
+  
+  def keys
+    self.members
+  end
+  
   def merge_and_compact(*p)
-    #merge two instances of strucun der a new struct instance named by a constant if a string (with first letter capital) is given
+    #merge two instances of struct in a new struct instance named by a constant if a string (with first letter capital) is given
     #remove duplicate members and arrayize value for duplicated key with non nil values
-    # remove key with nil values
+    #remove key with nil values
     struct_to_merge=[self]
     constant_name, memb, val = nil,[],[]
     p.each{|e|
@@ -65,7 +70,7 @@ class Struct
     p.each{|e|
       struct_to_merge << e if (e.respond_to?(:superclass) && e.superclass == Struct)
       (constant_name=(e =~ /^[A-Z]/ && e.slice(0..20).gsub(/[^\w\d_]/,""))||nil)  if e.is_a?(String)}
-     struct_to_merge.each{|s| memb << s.members} 
+    struct_to_merge.each{|s| memb << s.members} 
     memb= memb.flatten.uniq
      if constant_name
       Object.const_set(constant_name,Struct.new(*memb))
