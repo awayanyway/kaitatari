@@ -343,6 +343,7 @@ module Sweetcheese_switch
  end
  
     def switch_data_XYDATA
+      @check2 = true
       kai=@kai
       raw=@raw
       raw << Hua_point.new
@@ -391,24 +392,21 @@ module Sweetcheese_switch
     end
     
     def switch_data_DATA_TABLE
-        @check2=false
       switch_data_XYDATA
       #f_log "done with switch_data_XYDATA "
     end
     
     def switch_data_PEAK_TABLE
-       @check2=false
        switch_data_base("PEAK_TABLE")
     end
     
     def switch_data_XYPOINTS
-      @check2=false
       switch_data_XYDATA
     end
     
     def switch_data_PEAK_ASSIGNMENT
       #switch_ldr_entry
-      @check2=false
+      
       switch_data_base("PEAK_TABLE")
       @h=@g ##todo
     end
@@ -455,8 +453,9 @@ module Sweetcheese_switch
   def switch_data
     param=@kai
     param.data_FIRST||=[]
-      param.kai_indz||=[]
-       param.kai_indn||=[]
+    param.kai_indz||=[]
+    param.kai_indn||=[]
+    @check2 = false
     switch_dump_comment
     eval("switch_data_"+@ldr.to_s.gsub(/ +/,"_")) 
     f_log("done with switch_data_"+@ldr.to_s.gsub(/ /,"_"))
