@@ -174,7 +174,7 @@ module Output
      if opt=={}
      opt= @option_hash[:output][:cw]  
      end
-     opt[:orientation] = 2
+     opt[:orientation] = 1
      b,p = opt[:block] ,opt[:page]
     # p = 
      opt[:data_y]||=@data_output[b][:raw_point][p][:y]
@@ -186,7 +186,8 @@ module Output
      ofile.write(ps.output_text)
      f_log " in file: #{file} @ #{Time.now}"
      ofile.close
-     
+     f_log (" close file: #{file} ")
+
    end
    
    def jdx_format(entry="")
