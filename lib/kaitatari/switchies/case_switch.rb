@@ -297,6 +297,7 @@ module Sweetcheese_switch
  def switch_data_base(clas="nd")
       kai=@kai
       raw=@raw
+      
       raw << Hua_point.new
       raw.last.n << @temp_n if @temp_n
       raw.last.z << @temp_z if @temp_z
@@ -321,8 +322,7 @@ module Sweetcheese_switch
        y_index = symbol_index[1]
        kai.data_FIRST << kai.FIRST[y_index].to_f        
       end
-      kai.kai_DATA_TYPE||=[]
-      kai.kai_DATA_CLASS||=[]
+      
       kai.kai_DATA_CLASS<<clas
       kai.kai_DATA_TYPE<<@line
       
@@ -343,8 +343,11 @@ module Sweetcheese_switch
  end
  
     def switch_data_XYDATA
+      
+      
       @check2 = true
       kai=@kai
+      kai.kai_DATA_CLASS<<"XYDATA"
       raw=@raw
       raw << Hua_point.new
       raw.last.n << @temp_n if @temp_n
@@ -374,7 +377,7 @@ module Sweetcheese_switch
        y_index = symbol_index[1]
        kai.data_FIRST << kai.FIRST[y_index].to_f        
       end
-      kai.kai_DATA_TYPE||=[]
+      
       kai.kai_DATA_TYPE<<@line
       
       # if kai.FACTOR[x_index] && kai.FACTOR[x_index].to_f != 0
@@ -452,6 +455,9 @@ module Sweetcheese_switch
     
   def switch_data
     param=@kai
+    param.kai_DATA_TYPE||=[]
+    param.kai_DATA_CLASS||=[]
+    
     param.data_FIRST||=[]
     param.kai_indz||=[]
     param.kai_indn||=[]
