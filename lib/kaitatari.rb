@@ -38,18 +38,20 @@ def initialize(opt)
   end
   f_log @result.class
   if @result
-    @flotr2_data=@result.processor_kai #.fill_header
-   
+    @flotr2_data=@result.processor_kai ||nil #.fill_header
+  else
+    @flotr2_data="too early for strawberry season"
   end
   
 end
 
 def self.test_file(f,type=nil)
+ f=f.to_s.strip
  if !type && File.file?(f)
    
    answer=File.file?(f)
  
- elsif f.to_s.strip  =~ /\|/ && file=$'
+ elsif f  =~ /\|/ && file=$'
   
    if file.to_s != "" && file =~ /\|/
    file= ""
@@ -222,6 +224,7 @@ class Jcampdx
   def processor_cw
     switcher     = processor_main
     data=switcher.output4cw
+    return "got no data" if data[:y]==[0]
     @data_output=data
     opt={:data_y => data[:y], :ldr => data[:ldr] }
     output_cw(opt)
