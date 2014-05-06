@@ -44,7 +44,27 @@ def initialize(opt)
   
 end
 
-
+def self.test_file(f,type=nil)
+ if !type && File.file?(f)
+   
+   answer=File.file?(f)
+ 
+ elsif f.to_s.strip  =~ /\|/ && file=$'
+  
+   if file.to_s != "" && file =~ /\|/
+   file= ""
+   file=$` if $`
+   end
+   answer= File.file?(file)
+ end
+ 
+ 
+ if type && answer
+   f.to_s  =~ /\|/ && t=$`
+   answer=(type == t)
+ end
+ answer
+end
 
 def data
   @data=@result.data_output

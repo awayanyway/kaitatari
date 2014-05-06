@@ -130,7 +130,7 @@ module Output
     opt2=opt.dup
     opt2[:data_x]=opt2[:data_x][0] if opt2[:data_x]
     opt2[:data_y]=opt2[:data_y][0] if opt2[:data_y] 
-    f_log "#{opt2}"
+    
     ###
     
    @option_hash[:output][sym]=opt if sym
