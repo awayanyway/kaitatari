@@ -330,7 +330,7 @@ class Switchies
     f_log (temp.slice(:FACTOR))
     temp=temp.slice_4ldr(:raw_point)
     @flotr2_data=temp.to_flotr2
-    f_log @flotr2_data
+    
     @flotr2_data
   end
   
