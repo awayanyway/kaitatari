@@ -161,6 +161,7 @@ class Jcampdx
   def self.load_jdx4cw(*p)
     jdx_file = self.new(*p)
     jdx_file.processor_cw 
+    f_log " completed @#{Time.now}"
   end 
   
   def return_data
