@@ -299,7 +299,7 @@ class Kumara<Moa  #<Ropere# #todo structure vs Hash
      m.kFACTOR=[[1,1]]
      m.page=[[0]]
      m.z=[[0]]
-     m.xy=[[[10,10], [90,90], [50,50], [10,90],[90,10]]]
+     m.xy=[[[[10,10], [90,90], [50,50], [10,90],[90,10]]]]
      m.kai_BLOCK_ID=[[-1]]
      m
    end
@@ -322,7 +322,7 @@ class Kumara<Moa  #<Ropere# #todo structure vs Hash
      m.kFACTOR=[[1]]
      m.page=[[1]]
      m.z=[[0]]
-     m.xy=[[[10,10], [90,90], [50,50], [10,90],[90,10]]]
+     m.xy=[[[[10,10], [90,90], [50,50], [10,90],[90,10]]]]
      m.kai_BLOCK_ID=[[-1]]
      Moa.members.each{|k|   self[k]=m[k]}
    end
