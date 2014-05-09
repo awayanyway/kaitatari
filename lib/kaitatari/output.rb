@@ -178,7 +178,13 @@ module Output
      b,p = opt[:block] ,opt[:page]
     # p = 
      opt[:data_y]||=@data_output[b][:raw_point][p][:y]
-     opt[:resolution]=180
+      opt[:data_y]=opt[:data_y].trim_point(0..-1,800)
+     opt[:resolution]=400
+     opt[:graph_position]=[0,0,1.0,0.9]
+     opt[:graph_ldr_position]=[0,0.9]
+     opt[:size]= [8.3,11.7,"inch"]   
+     opt[:line_width]=2.2
+     opt[:scale_font]=30.0
      ps =  Postscript_output.new(opt)
      ps.build_ps
      file = @option_hash[:file] 
