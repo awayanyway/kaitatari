@@ -24,10 +24,11 @@ attr_reader :output_text
    @size_point = @size.map{|e| (e*72).floor if e.is_a?(Float)}
    #lower left and upper rigth corner cordinates of the graph window [x1,y1,x2,y2] 
    #in page fraction
-   @graph_position=opt[:graph_position] || [1/20.0,1/20.0,15/20.0,18/20.0]  
+   @graph_position=opt[:graph_position] || [1/20.0,1/20.0,15/20.0,19/20.0]  
+   @graph_ldr_position= opt[:graph_ldr_position] ||@graph_position[2..3]
    #in points values
    @graph=Array.new(4){|i| (@size_point[i.modulo(2)]* @graph_position[i]).round }
-   
+   @graph_ldr=Array.new(2){|i| (@size_point[i.modulo(2)]* @graph_ldr_position[i]).round }
    
    if opt[:data]
      #opt[:data_x]=opt[:data][2][0][0]  
@@ -67,6 +68,12 @@ attr_reader :output_text
    @fx=(@graph[2]-@graph[0])*@resolution/72.0 * (1-@margin[0])
    @fy=(@graph[3]-@graph[1])*@resolution/72.0 * (1-@margin[1])
    @f=[@fx,@fy]
+   lw=opt[:line_width]
+   @line_width=(lw && lw.is_a?(Numeric) && lw>0.1 && lw<5.0 && lw )||0.5
+   lw=opt[:scale_font]
+   @scale_font=(lw && lw.is_a?(Numeric) && lw>1.0 && lw<35.0 && lw )||8.0
+   #puts "@font size = #{@scale_font} and line width #{@line_width} "
+   @linespace=@scale_font*1.5
  end
  
   def jdx2ps
@@ -104,8 +111,8 @@ end
  
  def write_ldr
     
-    x,y = @graph[2],@graph[3]
-    t= "/Arial findfont\n8 scalefont\nsetfont\nnewpath\n"
+    x,y = @graph_ldr[0],@graph_ldr[1]
+    t= "/Arial findfont\n#{@scale_font} scalefont\nsetfont\nnewpath\n"
     t<< "#{x} #{y} moveto\n"
     @ldr.each_pair{|k,v|
                 if v.is_a?(Array)
@@ -113,7 +120,7 @@ end
                 else
                 val=v
                 end
-                t<< "(  #{k} = #{val}) #{x} #{y -= 12} moveto show\n"
+                t<< "(  #{k} = #{val}) #{x} #{y -= @linespace} moveto show\n"
                 }
    @output_text << t
    end
@@ -146,7 +153,7 @@ end
    j+=1
    end
    
-   t << "0.5 setlinewidth\nstroke\n"
+   t << "#{@line_width} setlinewidth\nstroke\n"
    
    @output_text << t
    return @output_text
