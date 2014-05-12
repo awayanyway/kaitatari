@@ -27,27 +27,32 @@ if __FILE__ == $0
 #j=Jcampdx.new(":file /home/pi/workspace/kaitatari/samples/TW_48.trunc.dx   :output_path /home/pi/Desktop")
  extract_label="TITLE, DATA TYPE,.OBSERVE NUCLEUS,.SOLVENT NAME,.PULSE SEQUENCE,.OBSERVE FREQUENCY"
 #j=Jcampdx.new(":file /home/pi/workspace/kaitatari20140311/samples/1D1H.dx :process extract #{extract_label} extract_first   :output_path /home/pi/Desktop")
-#file="/home/pi/workspace/kaitatari20140311/samples/1D1H.dx"
+file="/home/pi/workspace/kaitatari20140311/samples/1D1H.dx"
 #file="/home/pi/workspace/kaitatari20140311/samples/BRUKNTUP.DX" 
 #file="/home/pi/workspace/kaitatari20140311/samples/blckpac1.jdx" 
 file="/home/pi/workspace/kaitatari20140311/samples/blckpkt1.jdx" 
 #file="/home/pi/workspace/kaitatari20140311/samples/small2.jdx" 
- 
+
+# puts "testfile"
+# puts File.file?(file)
+# puts Kai.test_file(file)
+# puts Kai.test_file("jdx|#{file}","jdx") 
+# puts "testfile over"
 
 
-#jdx_data = Jcampdx.load_jdx(":file #{file} :process  extract #{extract_label}, extract_first ").last[:extract]
 @dx_data=Kai.new(":logging y  :file jdx|#{file} :tab all :process uncl param data point raw :output rb ps data_y raw ldr uncl  :output_path /home/pi/Desktop/output_ps"  )
-@dx_data.result.output_kaitatari
+# @dx_data.result.output_kaitatari
 puts @dx_data.class
 puts @dx_data.flotr2_data.class
-
 puts @dx_data.flotr2_data.respond_to?(:to_kumara)
 #puts @dx_data.flotr2_data.key?(:x_reversed)
 d=@dx_data.flotr2_data
-f_log d.inspect
+
+
 d=d.to_kumara
-f_log d.inspect
-puts d.chip_it(1..15,1)
+#d.xy=nil
+#f_log d.inspect
+puts d.chip_it(1..15)
 
 
 
