@@ -26,7 +26,7 @@ attr_accessor :opt, :result, :type ,:flotr2_data
 attr_reader :data
   
 def initialize(opt)
-  f_log
+  
   opt=opt.to_s unless opt.is_a?(String)
   opt =~ /(:file)\s*(\w+|)?/
   return nil  unless $1
@@ -36,7 +36,7 @@ def initialize(opt)
   when "jdx"     then Jcampdx.new(@opt)
   when "nmrbruk" then Topspin.new(@opt)
   end
-  f_log @result.class
+
   if @result
     @flotr2_data=@result.processor_kai ||nil #.fill_header
   else
@@ -110,7 +110,7 @@ class Jcampdx
   
   @@archive_path = "#{__FILE__}".gsub(/lib\/kaitatari\.rb\z/,"samples")
   @@log_path = @@archive_path + "/kaitatari.log"
-  @@logging = true
+  
   
   attr_accessor :data_output #,:option_hash
   attr_reader   :option_hash ,:ldr,:processed_points,:points,:tab_data #,:data_output,:option_list
@@ -127,9 +127,7 @@ class Jcampdx
       @@logging = true
    end
    
-   f_log(false)
-   f_log p.to_s
-   f_log "started at #{t}"
+
   end
    
     
@@ -140,7 +138,7 @@ class Jcampdx
     
     @option_hash.each_pair{|k,v| line << " "*(15-k.to_s.size)+"@#{k} = #{v}\n"} 
     puts line
-    f_log(line,-1)
+   
   end
      
   def option_list
@@ -183,7 +181,7 @@ class Jcampdx
   def self.load_jdx4cw(*p)
     jdx_file = self.new(*p)
     jdx_file.processor_cw 
-    f_log " completed @#{Time.now}"
+
   end 
   
   def return_data
@@ -203,13 +201,13 @@ class Jcampdx
                      
                       switcher.sw(line)
                       break if switcher.stop }
-    f_log "processing file over @ #{Time.now}"
+   
     switcher
   end
   
   def processor
     switcher=processor_main
-    #switcher.struct2h
+    
     @data_output=switcher.output 
     
   end
@@ -235,7 +233,7 @@ class Jcampdx
     return if !@option_hash[:output].is_a?(Hash)
     @output_list.each{|o| 
                            if @option_hash[:output][o.to_sym]
-                           #f_log "refact option before output_#{o}"
+                          
                            
                            ref_output_option(o.to_sym)
                            eval("output_#{o}") 
@@ -264,7 +262,7 @@ class Jcampdx
      end
      @option_hash.delete(:file)
      @option_hash=@option_hash.merge(temp_hash)
-     #f_log " @option_hash now = #{@option_hash}"
+    
      if @option_hash[:file] #&& !File.basename(@option_hash[:file]).to_s =~ /TEST/
       
         @option_hash[:filename] = File.basename(@option_hash[:file])

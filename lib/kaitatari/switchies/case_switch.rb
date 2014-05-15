@@ -113,7 +113,7 @@ module Sweetcheese_switch
         @temp_current[@ldr]     <<   "$$"+@line.rstrip
      end
       
-          #f_log ("\n            #{@ldr}=>"+@temp_current[@ldr][-1])   
+           
       @extract[@ldr]   <<   "$$"+@line.rstrip if @x_com && @extract[@ldr]
       
       @block_current[:comment][@ldr]||=[]
@@ -123,7 +123,7 @@ module Sweetcheese_switch
   end
 
   def switch_init_ldr
-  #f_log "\n <ldr:#{@ldr}><line=#{(@line == "" && "empty line") || @line || "nil line"}>"
+
    @h = @s1
   end
   
@@ -134,8 +134,7 @@ module Sweetcheese_switch
    end 
   
   def switch_base
-     # line = "\nBlock:#{@output.size} -- <#{@ldr}=>#{@line}>" 
-          # f_log line
+    
     if @temp_current[@ldr] 
     block_init(@ldr) if @temp_current !=  @block_current[:param] #&&  @s1!=@s1_param
     end
@@ -155,7 +154,7 @@ module Sweetcheese_switch
     manufacturer_ldr = [[Label_bruker_NMR_spec_param,Label_varian_NMR_spec_param], []]
     #Object.const_get("")
    if type 
-     f_log "type= #{type}"
+     
       data_type.each_with_index{|t,i| 
                        /(?<typ>#{t})/i  =~ type 
                  if  Regexp.last_match(:typ)
@@ -168,7 +167,7 @@ module Sweetcheese_switch
     end     
     temp_label = temp_label.compact.flatten  
     if temp_label != [] && !@block_current[:spec] && @process[:"spec"]
-      f_log "#{temp_label} detected"
+   
       @regex_spec_param = "\|"+temp_label.join('|')+"\|"
       temp_sym = temp_label.map{|e| e.to_sym}
       block_spec = Struct.new(*(temp_sym))
@@ -308,7 +307,7 @@ module Sweetcheese_switch
       kai.SYMBOL_INDEX ||= []
       kai.SYMBOL_INDEX << symbol_index
       
-      #f_log "SYMBOL_INDEX :  #{kai.SYMBOL_INDEX}"
+    
      
       ###
       x_index = symbol_index[0]
@@ -358,8 +357,7 @@ module Sweetcheese_switch
       symbol_index=switch_symbol
       kai.SYMBOL_INDEX ||= []
       kai.SYMBOL_INDEX << symbol_index
-      
-      #f_log "SYMBOL_INDEX :  #{kai.SYMBOL_INDEX}"
+
      
       ###
       x_index = symbol_index[0]
@@ -396,7 +394,7 @@ module Sweetcheese_switch
     
     def switch_data_DATA_TABLE
       switch_data_XYDATA
-      #f_log "done with switch_data_XYDATA "
+   
     end
     
     def switch_data_PEAK_TABLE
@@ -426,9 +424,8 @@ module Sweetcheese_switch
     
     def switch_ldr_entry
       if @line 
-       #f_log "@ldr: #{@ldr} - @temp_current is a class: #{@temp_current.class}"
-       # [@temp_current,@kai].each{|block| block[@ldr] ||=[]
-                                  # block[@ldr] << @line.strip }
+    
+     
             @temp_current[@ldr] ||=[]
             @temp_current[@ldr] << @line.strip                      
       end
@@ -464,9 +461,9 @@ module Sweetcheese_switch
     @check2 = false
     switch_dump_comment
     eval("switch_data_"+@ldr.to_s.gsub(/ +/,"_")) 
-    f_log("done with switch_data_"+@ldr.to_s.gsub(/ /,"_"))
+  
     switch_ldr_entry 
-    #@temp_current.each_pair{|k ,v| f_log "#{k}#{" "*(20-k.size)}  =  #{v}"}
+    
   end
   
   def switch_symbol(block=@temp_current,ldr='XYDATA',str=@line,symbol=@block_current[:kai].SYMBOL)
@@ -544,7 +541,7 @@ module Sweetcheese_switch
      @kai.ldr_extract=@extract.keys
      @kai.ldr_extract.uniq! if @kai.ldr_extract
      stop_it if @process[:point].to_s =~ /first_page/
-     #f_log @raw[-1][:x].zip(@raw[-1][:y])[0..10]
+    
      pn = @raw[-1].n[-1]
      px = @raw[-1].x.size
      py = @raw[-1].y.size
@@ -576,7 +573,7 @@ module Sweetcheese_switch
      end
      end
         line << "\n____exit_checkpoint____"
-     f_log line
+  
      puts line  
     
   end

@@ -262,7 +262,7 @@ class Ropere<Hash
                                     h.z[q]  =r[j][:z]}
    
      }
-     f_log(h)
+     
      Kumara.new(h)
    
    end

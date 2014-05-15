@@ -51,12 +51,12 @@ attr_reader :output_text
    end
    
    @margin = opt[:margin]||[0.0,0.0] 
-   f_log @margin
+  
    @offset ||=[0,0]
    @ldr = opt[:ldr] || {:'TITLE'=> "?"}
    @data_y= opt[:data_y] || [1]
    @data_x= opt[:data_x] || [*1..opt[:data_y].size]
-   f_log " x: #{@data_x[0..[10,@data_x.size].min]}\ny: #{@data_y[0..[10,@data_y.size].min]}"
+  
    @xy_arr= @data_x.zip(@data_y) 
    @output_file=opt[:output_file] 
    @output_text = "%!PS-Adobe-3.0\n"
@@ -97,7 +97,7 @@ end
    #data points are scaled to integer values and offset to the graph window
    max,min=data_array.max,data_array.min
    f= @f[axe]/ (max-min)
-   #f_log "axe=#{axe} min =#{min} max=#{max} f=#{f} \n #{@graph}"
+ 
    a=data_array.map{|e| ((e-min) * f ).round}  #+ @graph[axe]
    
    return a

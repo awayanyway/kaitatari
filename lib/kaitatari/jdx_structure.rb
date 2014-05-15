@@ -212,11 +212,11 @@ end
     dim=block.SYMBOL.size
     ind=[]
     perm= block.SYMBOL.uniq.permutation(2).to_a
-    #block.each_pair{|k ,v| f_log("#{k}#{" "*(20-k.size)}  =  #{v}")} #if @v_refactoring
+   
     while ind[0..1] == []
-      #f_log perm
+     
       a=perm.pop  
-      #f_log "perm #{perm} \n a #{a}\n block.ldr #{block[ldr]}" # if @v_refactoring
+      
       ##X++(Y..Y)
       if block[ldr].last =~ /^\s*\(?(#{a[0]})\+{1,2}\((#{a[1]})\.{1,2}#{a[1]}\)/
         
@@ -237,13 +237,13 @@ end
     size_dim = []
     block[:DUMPED_COMMENT]||=[]
     ["SYMBOL","VAR_TYPE","VAR_FORM","VAR_DIM","UNITS","FIRST","LAST","MIN","MAX","FACTOR","DELTA"].each {|ldr|
-      #f_log " ldr  is #{ldr} "
+    
        
      templdr = record_to_a(block[ldr]) 
      block[:DUMPED_COMMENT] << templdr[1]
      block[ldr]=templdr[0].flatten
      size_dim << block[ldr].size
-     f_log "#{ldr} = #{block[ldr].size}"
+    
     }
     #XY TO SYMBOL  #NPOINTS to VARIABLE DIMENSION
     if size_dim[0] == 0
@@ -266,7 +266,7 @@ end
     ##todo couple of DELTA calc test (now works with TEST.DX)   
     (size_dim[0]- size_dim.last).times{block.DELTA << ""}
     block.DELTA = block.DELTA.map.with_index{|inc,i| (inc.to_f != 0 && inc)|| delta(block, i) } 
-    #f_log " block.DELTA #{block.DELTA}" if @v_refactoring
+   
     ##uncomment next line to force delta re-calculation
     #block.DELTA = block.DELTA.map.with_index{|inc,i|  delta(block, i )} 
     
@@ -293,13 +293,13 @@ end
     ## calculate increment for the given symbol:
     ## if last first and dim are defined for the symbol, it returns (last-first)/(dim-1)
     s= (symb.is_a?(Integer) && symb) || block.SYMBOL.index(symb)
-    f_log " s = #{s} symb = #{symb}" #if @v_delta
+   
     temp = ["VAR_DIM","UNITS","FIRST","LAST"].map{|ldr| (s < block[ldr].size && block[ldr].fetch(s)) || nil}
-    f_log " temp = #{temp}" #if @v_delta
+  
     n= (temp[0].to_s =~  /^\s*([-+]?(?:\d*(?:\.?\d+|\.))+(?:[Ee][-+]?[0-9]+)?)\s*/ && ($1.to_i - 1)) || nil
     l=  (temp[3].to_s =~ /^\s*([-+]?(?:\d*(?:\.?\d+|\.))+(?:[Ee][-+]?[0-9]+)?)\s*/ &&  $1.to_f) || nil
     f=  (temp[2].to_s =~ /^\s*([-+]?(?:\d*(?:\.?\d+|\.))+(?:[Ee][-+]?[0-9]+)?)\s*/ &&  $1.to_f) || nil
-    f_log " n = #{n} \n  l = #{l} \n f = #{f}" #if @v_delta
+   
     if n && n > 0
       if l
         if f && f != l

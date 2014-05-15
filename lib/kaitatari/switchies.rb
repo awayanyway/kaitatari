@@ -195,7 +195,7 @@ class Switchies
    reinitialize_extract
    
    
-   f_log line
+  
    block_init
   
      
@@ -239,7 +239,7 @@ class Switchies
     @temp = ""
     @temp_delta = 1  
     
-    f_log line
+ 
   end
  def reinitialize_extract
       @regex_extract = @regex_extract_dup.dup
@@ -254,7 +254,7 @@ class Switchies
     #return "exit" if @h == @exit 
     @line=line#.to_s.strip 
     while @line   #.to_s != ""  
-      #f_log "\n@line : #{@line}"
+      
       switch(@h)
     end
     
@@ -293,11 +293,10 @@ class Switchies
    p=@precision
    symbol_ind=@kai.SYMBOL_INDEX.last[0..1] || [0,1]
    f=symbol_ind.map{|e| (@kai.FACTOR.fetch(e) && @kai.FACTOR.fetch(e).to_f) || 1 }   
-   f_log "<kai.FACTOR:#{@kai.FACTOR}> -vs-<factor:#{f}>"                  
+                    
    @processed.last.x=data_str2arr(@raw.last.x,f[0],p)
    @processed.last.y=data_str2arr(@raw.last.y,f[1],p)
-   f_log @processed.last.x[0..10]
-   f_log @processed.last.y[0..10]
+   
   end
    
    def data_str2arr(str="",factor=1,precision=16)
@@ -327,7 +326,7 @@ class Switchies
   def strawberry
     @tab_data=@output.to_ro
     temp=@tab_data.detect_and_fill
-    f_log (temp.slice(:FACTOR))
+   
     temp=temp.slice_4ldr(:raw_point)
     @flotr2_data=temp.to_flotr2
     
