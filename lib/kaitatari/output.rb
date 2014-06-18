@@ -2,7 +2,19 @@
 
 module Output
   include Data_structure
+   def output_lsi(opt={})
+     #temp=YAML.dump(@tab_data)
+     temp=Marshal.dump(@tab_data)
+     file = @option_hash[:output_file]
+     ofile=File.open(file, "w+",{:internal_encoding =>"ASCII-8BIT"})
+
+     ofile.write(temp)
+     ofile.close
+
+   end
+   
    def output_rb
+     
      temp = @data_output.to_s
      temp = temp.gsub(/,/,",\n")
      file = @option_hash[:output_file] + ".rb"
@@ -154,32 +166,40 @@ module Output
    #  }               
    end
    
+
+   
    def output_ps(opt={})
-     f_log "check option"
+     #f_log "check option"
      if opt=={}
      opt= @option_hash[:output][:ps]  
      end
-     puts "ps option"+opt.to_s
+    
      ps = Postscript_output.new(opt)
      ps.build_ps
      file = @option_hash[:output_file] + ".ps"
      ofile=File.open(file, "w+")
      ofile.write(ps.output_text)
-     f_log " in file: #{file} @ #{Time.now}"
+   
      ofile.close
     
    end
    
    def output_cw(opt={})
+     
      if opt=={}
-     opt= @option_hash[:output][:cw]  
+     #opt= @option_hash[:output][:cw] 
+      opt[:block] =  find_data_block  
+      opt[:page] = 0
      end
+    
+     if !opt[:data_xy]
+      b,p = opt[:block] ,opt[:page]
+     opt[:data_y]||=@data_output[b][:raw_point][p][:y] if b && p
+      opt[:data_y]=opt[:data_y].trim_point(0..-1,800) || [1]
+     end
+     
      opt[:orientation] = 1
-     b,p = opt[:block] ,opt[:page]
-    # p = 
-     opt[:data_y]||=@data_output[b][:raw_point][p][:y]
-      opt[:data_y]=opt[:data_y].trim_point(0..-1,800)
-     opt[:resolution]=400
+     opt[:resolution]||=400
      opt[:graph_position]=[0,0,1.0,0.9]
      opt[:graph_ldr_position]=[0,0.9]
      opt[:size]= [8.3,11.7,"inch"]   
@@ -187,7 +207,7 @@ module Output
      opt[:scale_font]=30.0
      ps =  Postscript_output.new(opt)
      ps.build_ps
-     file = @option_hash[:file] 
+     file = opt[:file] || @option_hash[:file]  
      ofile=File.open(file, "w+")
      ofile.write(ps.output_text)
      f_log " in file: #{file} @ #{Time.now}"
@@ -220,10 +240,6 @@ module Output
        b ||= count if d[count] && d[count][:raw_point] && d[count][:raw_point][0] && d[count][:raw_point][0][:y] != [] 
        count += 1
        end
-     # line= "no xy plot data found"         if !b
-     # line= "first  block with data : #{b}" if b
-     # f_log line
-     # puts line
      b
    end
    

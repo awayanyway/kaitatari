@@ -8,15 +8,13 @@ require_relative  "switchies/output"
 
 
 class Switchies
-#todo  ntuple processing : data=[[indep][dep]]= [[T1,T2],[]
-#  
+
 
  attr_reader :output,:stop, :flotr2_data, :tab_data,:sliced_tab_data
   include Data_structure
   include Pseudo_digit
   include Sweetcheese_case
-  include Sweetcheese_switch
-  #include Shambling 
+  include Sweetcheese_switch 
   include Sweet_output
   
   def initialize(  option={})
@@ -24,7 +22,7 @@ class Switchies
    temp=option[:process]
    neg_option_list=["extract","header","info", "spec", "param","data","uncl","comment"]
    option_to_case={ "extract" => :'case_extract',
-                     "header"  => :'case_header'   ,
+                     "header"  =>:'case_header'   ,
                     "info"    => :'case_sample_info'    ,
                     "spec"    => :'case_spec_param'    ,
                     "param"   => :'case_spectral_param'   ,
@@ -50,15 +48,11 @@ class Switchies
     
     @exit = {:'Default' => -> {@line=nil}  }
    
-   ### ground floor switch
-    # @g =  { :'case_init_ldr'  => -> {f_log "@g:case_init_ldr"  if @v;switch_init_ldr},    #match ldr     ##
-            # :'case_init_com'  => -> {f_log "@g:case_init_com"  if @v;switch_comment},    #match comment $$
-            # :'case_multi_line'=> -> {f_log "@g:case_multi_line"if @v;switch_multi_line},
-            # :'Default'        => -> {f_log "@g:default"        if @v;@line=nil}
-          # }
+
     @g =  { :'case_init_ldr'  => -> {switch_init_ldr},    #match ldr     ##
-            :'case_init_com'  => -> {switch_comment},    #match comment $$
+            #:'case_init_com'  => -> {switch_comment},    #match comment $$
             :'case_multi_line'=> -> {switch_multi_line},
+          #  :'case_init_com'  => -> {switch_comment},
             :'Default'        => -> {@line=nil}
           }      
     @g[:'case_init_ldr']= -> {reinitialize_extract;switch_init_ldr} if @process[:extract_all]   
@@ -73,78 +67,57 @@ class Switchies
             :'case_spectral_param' => -> { @s1=@s1_param ;@key=:param ;@temp_current = @block_current[:param] ;switch_spectral_param}, #f_log "@s1:spectral_param"if @v;    #match LDR Regex_spectral_param        param
             :'case_data'           => -> { switch_refact_param;                                                           #f_log "@s1:data"          if @v;    # 
                                            @s1=@s1_data  ;@key=:data  ;@temp_current = @block_current[:data]  ;switch_data},           #                                    #match LDR Regex_spectral_param        data
+            :'case_end'            => -> {@key=nil;@line=nil;@s1=@s1_end; @h =@g},
             :'case_uncl_ldr'       => -> {                @key=:uncl  ;@temp_current = @block_current[:uncl]  ;switch_uncl_ldr},       #f_log "@s1:uncl_ldr"      if @v;    #match LDR Regex_uncl_ldr           uncl
-            :'case_comment'        => -> { @s1=@s1_com;switch_comment},                                                   #f_log "@s1:comment"       if @v;    #match comment                              com
+           # :'case_comment'        => -> { @s1=@s1_com;switch_comment},                                                   #f_log "@s1:comment"       if @v;    #match comment                              com
             :'Default' => -> {@line=nil; @h =@g} #@ldr=nil;
           }
     
      @s1 = @s1_all
+     @s1_end  = { :'case_end'            => -> {@key=nil;@line=nil; @h =@g},
+                  :'Default'             => -> {switch_block;@s1=@s1_all;@h=@s1}
+                  
+                        }
      @s1_extract  = {                                            
             :'case_extract'        => -> {switch_extract},       #  f_log "@s1:extract"       if @v; #match LDR Regex_header                header 
-            #:'case_comment'        => -> switch_comment},       #  {f_log "@s1:comment"      if @v;            #match comment                         com
             :'Default'             => -> {@s1=@s1_all;@h=@s1}   #  f_log "@s1:default"       if @v 
                     }                                            #                                  
-     @s1_header   = {                                                            #                                  
-            :'case_extract'        => -> { switch_extract},                      #  f_log "@s1:extract"       if @v;
-            :'case_header'         => -> { switch_header},                       #  f_log "@s1:header"        if @v; #match LDR Regex_header                header 
-            #:'case_comment'        => ->  switch_comment},                      #  {f_log "@s1:comment"      if @v;             #match comment                         com
-            :'Default'             => -> {@s1=@s1_all;@h=@s1;switch_check_spec} #f_log "@s1:default"       if @v;
-                    }               
-                    
-     @s1_info   =  {
-           :'case_extract'         => -> {switch_extract},    #   f_log "@s1:extract"       if @v;          
-           :'case_sample_info'     => -> {switch_sample_info},#   f_log "@s1:sample_info"   if @v;             #match LDR Regex_sample_info           info
-           #:'case_comment'         => ->  switch_comment},   #   {f_log "@s1:comment"       if @v;                         #match comment               com
-           :'Default'              => -> {@s1=@s1_all;@h=@s1} #   f_log "@s1:default"       if @v;          
-                    }                                         #                                             
-     @s1_spec   =  {                                          #                                             
-           :'case_extract'         => -> {switch_extract},    #   f_log "@s1:extract"       if @v;          
-           :'case_spec_param'      => -> {switch_spec_param}, #   f_log "@s1:spec_param"    if @v;            #match LDR Regex_spec_param          
-           #:'case_comment'         => ->  switch_comment},   #   {f_log "@s1:comment"       if @v;                         #match comment               com
-           :'Default'              => -> {@s1=@s1_all;@h=@s1} #                               #f_log "@s1:default" if @v;
-                    }                  
-     @s1_param   = { 
-           :'case_extract'         => -> { switch_extract},  #f_log "@s1:extract"       if @v;
-           :'case_spectral_param'  => -> { switch_spectral_param}, #f_log "@s1:spectral_param"if @v; #match LDR Regex_spectral_param        param
-           #:'case_comment'         => -> {f_log "@s1:comment" if @v;switch_comment},                     #match comment               com
-           :'Default'              => -> {@s1=@s1_all;@h=@s1} #f_log "@s1:default" if @v;
-                    }                 
-     @s1_data     = {
-           :'case_extract'         => -> {switch_extract},  #f_log "@s1:extract"       if @v; 
-           :'case_data'            => -> { switch_data},     #f_log "@s1:data"          if @v;       #match LDR Regex_spectral_param        data
-           #:'case_comment'         => -> {f_log "@s1:comment"       if @v; switch_comment},                     #match comment                         com
-           :'Default'              => -> {@s1=@s1_all;@h=@s1}                                    #f_log "@s1:default" if @v;
-                    }
-     @s1_uncl_ldr  = { 
-           :'case_extract'         => -> { switch_extract},
-           :'case_uncl_ldr'        => -> {switch_uncl_ldr},        #match LDR Regex_uncl_ldr           uncl
-           #:'case_comment'         => -> {f_log "@s1:comment"       if @v; switch_comment},                     #match comment                         com
-           :'Default'              => -> { @s1=@s1_all;@h=@s1} 
-                    }
-     @s1_comment   = {
-           :'case_extract'         => -> { switch_extract},
-           :'case_comment'         => -> {switch_comment},         #match comment                         com             
-           :'Default'              => -> { @s1=@s1_all;@h=@g} 
-                    }
+     
+     ht=Hash[['@s1_header','@s1_info', '@s1_spec','@s1_param' ,'@s1_data','@s1_uncl_ldr'].zip(['header','sample_info','spec_param','spectral_param','data','uncl_ldr'])]
+     
+     ht.each_pair{|k,v|  v1 = ('case_'+v).to_sym
+                         v2 = ('switch_'+v).to_sym
+                         instance_variable_set( k, { :'case_extract'  => -> { switch_extract},              
+                                 v1              => -> { send(v2)},                    
+                                :'Default'       => -> {@s1=@s1_all;@h=@s1}})
+                   }
+     
+     @s1_header[:'Default']= ->{@s1=@s1_all;@h=@s1;switch_check_spec}
+               
+     # @s1_comment   = {
+           # :'case_extract'         => -> { switch_extract},
+           # :'case_comment'         => -> {switch_comment},         #match comment                         com             
+           # :'Default'              => -> { @s1=@s1_all;@h=@g} 
+                    # }
 
     
     #  switch  : processing datapoints
     @s31 = {
            :'case_31'              => -> {switch_31},  #match/retrieve x =  +/- 1234.56e+/-123
            :'case_init_ldr'        => -> { switch_check_out if @proc;@h=@s1},
-           :'case_init_com'        => -> {switch_comment},
+           :'case_init_com'        => -> {switch_multi_line},
            :'Default'              => -> {@line=nil}
            }                      
     @s32 = {                      
            :'case_32'              => -> {switch_32},
            :'case_init_ldr'        => -> {switch_check_out if @proc; @h=@s1},
-           :'case_init_com'        => -> {switch_comment},
+           :'case_init_com'        => -> {switch_multi_line},
            :'Default'              => -> {@line=nil}
            }
     @s30 = {                      
           
            :'case_init_ldr'        => -> {@h=@s1},
-           :'case_init_com'        => -> {switch_comment},
+           :'case_init_com'        => -> {switch_multi_line},
            :'Default'              => -> {@line=nil}
            }   
    
@@ -179,23 +152,20 @@ class Switchies
    if @process[:point] && @process[:point].to_s =~ /(raw)/i || neg_option_list.size== 7
      @proc=$1
    end
-   # line << "\n @proc is true  :    processing of #{$1} datapoints "     if @proc
-   # line << "\n @proc is false : no processing of  datapoints "          if !@proc 
    ####
    
    @block=0    
    @precision = (option[:precision].to_i != 0  && option[:precision].to_i) || nil
    
-   ##other instance variable def
+   ##
    @output=Rapere.new   
-     @regex_extract_dup = "|"
-      [:extract,:extract_all,:extract_first].each{|s| @regex_extract_dup += @process[s].dup.compact.map{|e| e.strip}.uniq.join("|").gsub(/\s*[",]\s*/,"").gsub(/\|+/,"|") if @process[s]}
-      @regex_extract_dup << "|"
+   
+   @regex_extract_dup = "|"
+   [:extract,:extract_all,:extract_first].each{|s| @regex_extract_dup += @process[s].dup.compact.map{|e| e.strip}.uniq.join("|").gsub(/\s*[",]\s*/,"").gsub(/\|+/,"|") if @process[s]}
+   @regex_extract_dup << "|"
    
    reinitialize_extract
    
-   
-   f_log line
    block_init
   
      
@@ -207,19 +177,20 @@ class Switchies
     
   def block_init(ldr=nil)
     
-    line = "\ninit new block"
+    line = "\ninit new block with ldr"+ldr.to_s+" and block_current:"+@key.to_s
     if @output.size>0
     
     end
     
     if ldr && @block_current
       @block_current[:kai].kai_TITLE = ldr
+     
     end
     if @process[:block]
       ## exit  if wanted blocked processed or skip if current block not wanted
     end
     
-     #Regex_spectral_param_NMR
+     
     reinitialize_extract unless @process[:extract_first]
       
     # line << "\nextraction of : #{@regex_extract}" if @regex_extract
@@ -231,19 +202,21 @@ class Switchies
     @block_current=@output.last
     key=@key||:uncl
     @temp_current = @block_current[key]
-    @kai=@block_current[:kai] #todo check if i can have thi  in the intitializer
+    @header=@block_current[:header]
+    @kai=@block_current[:kai]
+    @param=@block_current[:param] 
     @raw=@block_current[:raw_point]
     @extract=@block_current[:extract]
     @processed=@block_current[:processed_point]
     @ntuple=0
     @temp = ""
     @temp_delta = 1  
+    # line
     
-    f_log line
   end
+
  def reinitialize_extract
-      @regex_extract = @regex_extract_dup.dup
-      
+      @regex_extract = @regex_extract_dup.dup      
  end
   
 
@@ -282,8 +255,9 @@ class Switchies
  def output4cw
    cw= {:ldr=>{},:y=>[]}
    @regex_extract_dup.split(/\|/).each{|s| s=s.to_sym;@output.each{|b| cw[:ldr][s]=b[:extract][s] || [] }}
-  
+
    cw[:y]=(@output[-1][:raw_point][0] && @output[-1][:raw_point][0][:y])|| [0]
+   #puts  cw.inspect.slice(0..100)
    cw
  end 
 
@@ -293,7 +267,6 @@ class Switchies
    p=@precision
    symbol_ind=@kai.SYMBOL_INDEX.last[0..1] || [0,1]
    f=symbol_ind.map{|e| (@kai.FACTOR.fetch(e) && @kai.FACTOR.fetch(e).to_f) || 1 }   
-   f_log "<kai.FACTOR:#{@kai.FACTOR}> -vs-<factor:#{f}>"                  
    @processed.last.x=data_str2arr(@raw.last.x,f[0],p)
    @processed.last.y=data_str2arr(@raw.last.y,f[1],p)
    f_log @processed.last.x[0..10]
@@ -327,11 +300,10 @@ class Switchies
   def strawberry
     @tab_data=@output.to_ro
     temp=@tab_data.detect_and_fill
-    f_log (temp.slice(:FACTOR))
-    temp=temp.slice_4ldr(:raw_point)
+    #trim out alls block without raw point data
+    #temp=temp.slice_4ldr(:raw_point)
     @flotr2_data=temp.to_flotr2
     
-    @flotr2_data
   end
   
   def kumara(data=@flotr2_data)

@@ -33,14 +33,15 @@ def initialize(opt)
   @opt=$`+" :file "+$'
   @type=$2
   @result= case type 
-  when "jdx"     then Jcampdx.new(@opt)
+  when "jdx"     then Jcampdx.new(@opt).processor_kai
   when "nmrbruk" then Topspin.new(@opt)
+  when "yaml"    then Jcampdx.new(@opt).load_yaml.detect_and_fill
   end
-  f_log @result.class
+ 
   if @result
-    @flotr2_data=@result.processor_kai ||nil #.fill_header
+    @flotr2_data=@result ||nil #.fill_header
   else
-    @flotr2_data="too early for strawberry season"
+    #@flotr2_data="too early for strawberry season"
   end
   
 end
@@ -82,6 +83,7 @@ def self.load(opt)
   result= case type 
   when "jdx"     then Jcampdx.load_jdx(opt)
   when "nmrbruk" then Topspin.load_file(opt)
+  when "yaml"    then Jcampdx.load_yaml(opt)
   end
   result 
 end
@@ -110,7 +112,7 @@ class Jcampdx
   
   @@archive_path = "#{__FILE__}".gsub(/lib\/kaitatari\.rb\z/,"samples")
   @@log_path = @@archive_path + "/kaitatari.log"
-  @@logging = true
+  @@logging = false
   
   attr_accessor :data_output #,:option_hash
   attr_reader   :option_hash ,:ldr,:processed_points,:points,:tab_data #,:data_output,:option_list
@@ -120,7 +122,7 @@ class Jcampdx
    
    @data_output=[] 
    @option_hash={:temp => []}
-   @output_list=["rb","txt","yaml","marshal", "ps", "cw"]
+   @output_list=["rb","txt","yaml","marshal", "ps", "cw","lsi"]
    wicked_setup(*p)
    
    if @option_hash[:logging]
@@ -176,6 +178,7 @@ class Jcampdx
   def self.load_jdx(*p)
     jdx_file = self.new(*p)
     jdx_file.processor if jdx_file.option_hash[:process]
+    
     jdx_file.output_kaitatari if jdx_file.option_hash[:output]
     jdx_file.return_data
   end 
@@ -183,14 +186,55 @@ class Jcampdx
   def self.load_jdx4cw(*p)
     jdx_file = self.new(*p)
     jdx_file.processor_cw 
-    f_log " completed @#{Time.now}"
+  
   end 
+     
+
+  
+  def ps_generator
+ 
+    temp=@tab_data.slice_4ldr(:raw_point).to_flotr2.to_kumara.chip_it
+    opt={
+     :data_xy => temp.xy,
+     :resolution => 600,
+    }
+    output_cw(opt) 
+  end
+  
+  def load_yaml
+    temp=File.read(@option_hash[:file],{:external_encoding=>"ASCII-8BIT" })
+    #@yaml=YAML.load(temp)
+    @yaml=Marshal.load(temp)
+    puts "loaded marshal:"+@yaml.inspect.slice(0..30)
+    @tab_data=Switchies::Ropere.new(@yaml)
+    
+  end
+  def self.load_yaml(*p)
+    jdx_file = self.new(*p)
+    jdx_file.load_yaml
+    jdx_file.return_data
+    
+  end
+  
+  def self.load_yaml_2_ps(*p)
+     j = self.new(*p)
+     j.load_yaml
+     j.ps_generator
+  end
+  
   
   def return_data
-    return YAML.dump(self.data_output) if @option_hash[:return_as] =~ /yaml/
-    return Marshal.dump(self.data_output)  if @option_hash[:return_as] =~ /marshal/
-    return  ps_new if @option_hash[:return_as] =~ /ps|postscript/
-    return self.data_output
+    if @option_hash[:return_as] =~ /yaml/
+      r= YAML.dump(self.data_output) 
+    elsif @option_hash[:return_as] =~ /marshal/
+      r= Marshal.dump(self.data_output)  
+    #r=  ps_new elsif @option_hash[:return_as] =~ /ps|postscript/
+    elsif  @option_hash[:return_as] =~ /kumara/
+      r= self.tab_data.slice_4ldr(:raw_point).to_flotr2.to_kumara 
+    else 
+      r= self.data_output
+    end
+    r
   end
   
 
@@ -203,53 +247,45 @@ class Jcampdx
                      
                       switcher.sw(line)
                       break if switcher.stop }
-    f_log "processing file over @ #{Time.now}"
     switcher
   end
   
   def processor
     switcher=processor_main
-    #switcher.struct2h
     @data_output=switcher.output 
+    @tab_data= switcher.strawberry
     
   end
   
   def processor_kai
     switcher = processor_main
-    @tab_data_output= switcher.strawberry
     @data_output=switcher.output
-    @tab_data_output
+    @tab_data= switcher.strawberry
   end
   
   def processor_cw
     switcher     = processor_main
-    data=switcher.output4cw
-    return "got no data" if data[:y]==[0]
-    @data_output=data
-    opt={:data_y => data[:y], :ldr => data[:ldr] }
-    output_cw(opt)
+    #data=switcher.output4cw
+    #return "got no data" if data[:y]==[0]
+    @data_output=switcher.output #data
+    #opt={:data_y => data[:y], :ldr => data[:ldr] }
+    output_cw()
     puts "done with processor_cw" 
   end
 
+
   def output_kaitatari
+   
+    
     return if !@option_hash[:output].is_a?(Hash)
     @output_list.each{|o| 
                            if @option_hash[:output][o.to_sym]
                            #f_log "refact option before output_#{o}"
-                           
+                           puts "output #{o}"
                            ref_output_option(o.to_sym)
                            eval("output_#{o}") 
                            end }
-    
-    # output_rb      if @option_hash[:output]  #=~ /\s*(rb|ruby)\s*/
-    # output_txt     if @option_hash[:output]  #=~ /\s*(text|txt)\s*/
-    # output_yaml    if @option_hash[:output]  #=~ /\s*yaml\s*/
-    # output_marshal if @option_hash[:output]  #=~ /\s*(msh|marshal)\s*/
-    # output_ps      if @option_hash[:output]  #=~ /\s*(ps|postscript)\s*/
-    # output_cw      if @option_hash[:output]  #=~ /\s*(cw)\s*/ #carierewave
-
   end
-   
 
    
    private
@@ -300,23 +336,12 @@ class Jcampdx
        
       
      end 
-     #@file        = @option_hash[:file]
-     #@output_file = @option_hash[:output_file] || nil
-     #@process    = @option_hash[:process]     || nil
-     #@extract    = @option_hash[:extract]     || nil
-     #@output      = @option_hash[:output]      || nil
-     #@return_as   = @option_hash[:return_as]   || nil 
-      self.show_option
+
+     # self.show_option
   end
    
    
  
- # def data_output=(new_val)
-   #  @data_output=new_val
-  # end
-  
-  # def self.marshal_load(data)
-    # Marshal.load(data)
-  # end 
+
    
 end

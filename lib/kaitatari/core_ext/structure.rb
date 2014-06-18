@@ -12,11 +12,31 @@
 #
 # end
 #
+class String
+    def sanitized_ldr
+     ldr=self
+     return  ldr if ldr =~ /^[pd]_[0-9a-zA-Z]+\Z/
+     return  ($' && "d_".concat($'.gsub(/\W|_/,""))) if ldr =~ /^\$/  
+     return  ($' && "p_".concat($'.gsub(/\W|_/,""))) if ldr =~ /^\./ 
+     ldr.gsub(/\W|_/,"")
+    end
+end
+
+class Symbol
+    def sanitized_ldr
+     ldr=self.to_s 
+     return  ldr.to_sym if ldr =~ /^[pd]_[0-9a-zA-Z]+\Z/
+     return  ($' && "d_".concat($'.gsub(/\W|_/,""))).to_sym if ldr =~ /^\$/  
+     return  ($' && "p_".concat($'.gsub(/\W|_/,""))).to_sym if ldr =~ /^\./ 
+     ldr.gsub(/\W|_/,"").to_sym
+    end
+end
+
 class Struct
-  
-  def keys
-    self.members
-  end
+    alias_method :old, :[]
+    alias_method :olde, :[]=
+
+ 
   
   def merge_and_compact(*p)
     #merge two instances of struct in a new struct instance named by a constant if a string (with first letter capital) is given
@@ -64,7 +84,7 @@ class Struct
   
   def self.merge(*p)
     # merge structure class 
-    # if constant string suplied associate constant to the new structure class else return the structure class
+    # if constant string supplied associate constant to the new structure class else return the structure class
     #remove duplicated members
     memb,struct_to_merge, constant_name = [],[], nil
     p.each{|e|

@@ -4,7 +4,7 @@ attr_reader :output_text
  
  def initialize(opt={})
    # 
-    
+  
    p = opt[:page] || 0   
    opt[:size] ||= [11.7,8.3,"inch"] 
    @size=(opt[:size][0].is_a?(Float) && opt[:size][1].is_a?(Float) && opt[:size]) || [11.7,8.3, "inch"] 
@@ -30,9 +30,9 @@ attr_reader :output_text
    @graph=Array.new(4){|i| (@size_point[i.modulo(2)]* @graph_position[i]).round }
    @graph_ldr=Array.new(2){|i| (@size_point[i.modulo(2)]* @graph_ldr_position[i]).round }
    
-   if opt[:data]
+   if opt[:data] && !opt[:data_xy]
      #opt[:data_x]=opt[:data][2][0][0]  
-     if !opt[:data_y]
+     if !opt[:data_y] 
         if    opt[:data][:raw_point]        && opt[:data][:raw_point][0]       && opt[:data][:raw_point][0][:y].size >0 
               opt[:data_y] =  opt[:data][:raw_point][0][:y] 
               opt[:data_x] = (opt[:data][:raw_point][0][:x].size       == opt[:data_y].size && opt[:data][:raw_point][0][:x])       || [*1..opt[:data_y].size]
@@ -51,13 +51,17 @@ attr_reader :output_text
    end
    
    @margin = opt[:margin]||[0.0,0.0] 
-   f_log @margin
+   
    @offset ||=[0,0]
-   @ldr = opt[:ldr] || {:'TITLE'=> "?"}
+   @ldr = opt[:ldr] || {}
+   if opt[:data_xy]
+     opt[:data_x],opt[:data_y]=opt[:data_xy].transpose
+   end
    @data_y= opt[:data_y] || [1]
-   @data_x= opt[:data_x] || [*1..opt[:data_y].size]
-   f_log " x: #{@data_x[0..[10,@data_x.size].min]}\ny: #{@data_y[0..[10,@data_y.size].min]}"
-   @xy_arr= @data_x.zip(@data_y) 
+   @data_x= opt[:data_x] || [*1..@data_y.size]
+   
+   @xy_arr= opt[:data_xy] || @data_x.zip(@data_y) 
+   #puts @xy_arr.inspect.slice(0..100)
    @output_file=opt[:output_file] 
    @output_text = "%!PS-Adobe-3.0\n"
    o=opt[:orientation].to_s
@@ -72,18 +76,18 @@ attr_reader :output_text
    @line_width=(lw && lw.is_a?(Numeric) && lw>0.1 && lw<5.0 && lw )||0.5
    lw=opt[:scale_font]
    @scale_font=(lw && lw.is_a?(Numeric) && lw>1.0 && lw<35.0 && lw )||8.0
-   #puts "@font size = #{@scale_font} and line width #{@line_width} "
    @linespace=@scale_font*1.5
  end
  
   def jdx2ps
     build_ps
-    puts "#{__method__} in file: #{file}" 
     return output_text
   end
 
 def build_ps
+
   prepare_xyarr
+
   draw_box
   write_ldr
   draw_line
@@ -104,7 +108,7 @@ end
  end
 
  
- def prepare_xyarr(x=@data_x,y=@data_y,margin=[0,0]) 
+ def prepare_xyarr(x=@data_x,y=@data_y,margin=@margin) 
    @xy_arr = data_to_point(x,0,margin[0]).zip(data_to_point(y,1,margin[1]))
    return @xy_arr
  end
@@ -114,6 +118,7 @@ end
     x,y = @graph_ldr[0],@graph_ldr[1]
     t= "/Arial findfont\n#{@scale_font} scalefont\nsetfont\nnewpath\n"
     t<< "#{x} #{y} moveto\n"
+    if @ldr
     @ldr.each_pair{|k,v|
                 if v.is_a?(Array)
                 val=v.join("\n")
@@ -122,6 +127,7 @@ end
                 end
                 t<< "(  #{k} = #{val}) #{x} #{y -= @linespace} moveto show\n"
                 }
+    end
    @output_text << t
    end
    

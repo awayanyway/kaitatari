@@ -20,9 +20,10 @@ Label_spectral_param_NMR_sym = [
   :'.PULSE SEQUENCE', # HETCOR
  ]
   
-  Label_spectral_param_NMR = Label_spectral_param_NMR_sym.map{|s| s.to_s}
-  Regex_spectral_param_NMR = Regexp.new(/^(#{Label_spectral_param_NMR.join('|')})\s*=\s*/)
-
+  Label_spectral_param_NMR_s = Label_spectral_param_NMR_sym.map{|s| s.to_s}
+  Regex_spectral_param_NMR_s = Regexp.new(/^(#{Label_spectral_param_NMR_s.join('|')})\s*=\s*/)
+   Label_spectral_param_NMR = Struct.new(*(Label_spectral_param_NMR_sym))
+   Object::meta_build(Label_spectral_param_NMR)
 
 
 module Data_structure_NMR_Bruker
@@ -477,16 +478,18 @@ Label_bruker_NMR_spec_param_sym= [
   ]
   
   
-  Label_bruker_NMR_spec_param = Label_bruker_NMR_spec_param_sym.map{|s| s.to_s}
-  Regex_bruker_NMR_spec_param = Regexp.new(/^(#{Label_bruker_NMR_spec_param.join('|')})\s*=\s*/)
+  Label_bruker_NMR_spec_param_s = Label_bruker_NMR_spec_param_sym.map{|s| s.to_s}
+  Regex_bruker_NMR_spec_param = Regexp.new(/^(#{Label_bruker_NMR_spec_param_s.join('|')})\s*=\s*/)
+  Label_bruker_NMR_spec_param = Struct.new(*(Label_bruker_NMR_spec_param_sym))
+   Object::meta_build(Label_bruker_NMR_spec_param)
 end
 
 module Data_structure_NMR_Varian
   Label_varian_NMR_spec_param_sym = [
     
   ]
-  Label_varian_NMR_spec_param = Label_varian_NMR_spec_param_sym.map{|s| s.to_s}
-  Regex_varian_NMR_spec_param = Regexp.new(/^(#{Label_varian_NMR_spec_param.join('|')})\s*=\s*/) 
+  Label_varian_NMR_spec_param_s = Label_varian_NMR_spec_param_sym.map{|s| s.to_s}
+  Regex_varian_NMR_spec_param = Regexp.new(/^(#{Label_varian_NMR_spec_param_s.join('|')})\s*=\s*/) 
   
 end
 

@@ -9,15 +9,19 @@ module Sweetcheese_case
   end
 
   def case_init_com
-    /^\s*\$\$\s*(.*)/ =~ @line && @line=$1.rstrip
+    /^\s*\$\$\s*(.*)/ =~ @line && @line='$$'+$1.rstrip
   end
   
-  def case_comment
-    /^\s*\$\$\s*(.*)/ =~ @line && @line=$1.rstrip
-  end
+  # def case_comment
+    # /^\s*\$\$\s*(.*)/ =~ @line && @line=$1.rstrip
+  # end
 
+  def case_end
+    @ldr =~ /^END\Z/
+  end
+  
   def case_init_ldr
-    (/^\s*##\s*(\S.*?\S)\s*=/ =~ @line && @ldr= $1.to_sym)  &&    @line=$'.strip## != ""
+    (/^\s*##\s*(\S.*?\S)\s*=/ =~ @line && (@ldr,@ldr_o= $1.sanitized_ldr.to_sym,$1.to_sym))  &&    @line=$'.strip## != ""
   end
   
   def case_multi_line
@@ -32,30 +36,36 @@ module Sweetcheese_case
     #(@line =~ @regex_spec_param && @ldr=$1) && @line=$'
   end
   
-  
+   def case_general(key)
+      @ldr =~ @block_current[key].sanitized_regexp
+   end
+    
   def case_header
-    @ldr =~ Regex_header #  line != "" &&  @ldr =~ Regex_header
+    case_general(:header)
+    #@ldr =~ Regex_header #  line != "" &&  @ldr =~ Regex_header
     #(@line =~ Regex_header && @ldr=$1) && @line=$'
   end
 
   def case_sample_info
-    @ldr =~ Regex_sample_info 
+    case_general(:info)
+    #@ldr =~ Regex_sample_info 
     #(@line =~ Regex_sample_info && @ldr=$1) && @line=$'
   end
 
   def case_spec_param
-    #@ldr =~ @regex_spec_param
-    /\|(#{@ldr})\|/ =~ @regex_spec_param && @ldr=$1
-    #(@line =~ @regex_spec_param && @ldr=$1) && @line=$'
+   #  @ldr.to_s+(@block_current[:spec] && @block_current[:spec].true_member?(@ldr)).to_s
+       @block_current[:spec] && @block_current[:spec].true_member?(@ldr)
   end
   
   def case_spectral_param
-    @ldr =~ Regex_spectral_param
+    case_general(:param)
+    #@ldr =~ Regex_spectral_param
     #(@line =~ Regex_spectral_param && @ldr=$1) && @line=$'
   end
   
   def case_data
-    @ldr =~ Regex_data
+    case_general(:data)
+    #@ldr =~ Regex_data
     #(@line =~ Regex_data && @ldr=$1) && @line=$'
   end
 
@@ -81,6 +91,8 @@ module Sweetcheese_switch
   include Data_structure
   include Data_structure_NMR
   
+
+  
   def switch_block
     #   block_output_data
     block_init
@@ -93,37 +105,21 @@ module Sweetcheese_switch
   
  
   def switch_multi_line
-    if @temp_current.is_a?(Struct)  && @temp_current.respond_to?(@ldr)
-      @temp_current[@ldr]     <<   "$$"+@line.rstrip if @temp_current.respond_to?(@ldr)
-     elsif  @temp_current.is_a?(Hash)
-        @temp_current[@ldr]     <<   "$$"+@line.rstrip
-     end
-   
-    @extract[@ldr]   << @line  if @x_multi &&  @extract[@ldr]
+     @temp_current[@ldr]=@line 
+     @extract[@ldr]   << @line  if @x_multi &&  @extract[@ldr]
     @line = nil
   end
  
   def switch_comment
     if @line != "" && @ldr
-          
-          
-     if @temp_current.is_a?(Struct)  && @temp_current.respond_to?(@ldr)
-      @temp_current[@ldr]     <<   "$$"+@line.rstrip if @temp_current.respond_to?(@ldr)
-     elsif  @temp_current.is_a?(Hash)
-        @temp_current[@ldr]     <<   "$$"+@line.rstrip
-     end
-      
-          #f_log ("\n            #{@ldr}=>"+@temp_current[@ldr][-1])   
+      @temp_current[@ldr]=@line
       @extract[@ldr]   <<   "$$"+@line.rstrip if @x_com && @extract[@ldr]
-      
-      @block_current[:comment][@ldr]||=[]
-      @block_current[:comment][@ldr]||=[] << @line.rstrip
     end
     @line = nil
   end
 
   def switch_init_ldr
-  #f_log "\n <ldr:#{@ldr}><line=#{(@line == "" && "empty line") || @line || "nil line"}>"
+   
    @h = @s1
   end
   
@@ -134,46 +130,42 @@ module Sweetcheese_switch
    end 
   
   def switch_base
-     # line = "\nBlock:#{@output.size} -- <#{@ldr}=>#{@line}>" 
-          # f_log line
-    if @temp_current[@ldr] 
-    block_init(@ldr) if @temp_current !=  @block_current[:param] #&&  @s1!=@s1_param
+    
+    inc =nil
+    if @temp_current ==  @block_current[:header] && @temp_current.fetch(@ldr,false)
+     switch_check_spec 
+     block_init(@ldr) 
     end
-    @line && (@temp_current[@ldr] = [@line.strip]) && @line=nil
+    inc=true          if @temp_current ==  @block_current[:uncl]   && @temp_current.fetch(@ldr,false)
+    
+    p=[@ldr_o,@line, inc].compact
+    @line && (@temp_current.send(:[]=, *p)) && @line=nil
      
     @h=@g
   end
   
   def switch_check_spec
-    temp_label=[]
-    type   = @block_current[:header][:'DATA TYPE'].join(' ').strip if @block_current[:header][:'DATA TYPE']
-    origin = @block_current[:header][:'ORIGIN'].join(' ').strip    if @block_current[:header][:'ORIGIN']
+ 
+    @tt||=[]
+    type   = @header.DATATYPE.to_s+@header.ORIGIN.to_s    #  if @header.DATATYPE
+    origin = @header.ORIGIN.to_s   # if @header.ORIGIN
        
     data_type        = [ 'NMR'                                                   , 'IR'] #todo declare these as constant in respecive jdx_structure file
-    type_ldr         = [[Label_spectral_param_NMR]                               , [Label_header_info_irug]]
-    manufacturer_type =[['Bruker'                   ,'Varian']                   , []]
-    manufacturer_ldr = [[Label_bruker_NMR_spec_param,Label_varian_NMR_spec_param], []]
-    #Object.const_get("")
+    manufacturer_type =[['bruker'                   ,'varian']                   , []]
+    
    if type 
-     f_log "type= #{type}"
       data_type.each_with_index{|t,i| 
                        /(?<typ>#{t})/i  =~ type 
                  if  Regexp.last_match(:typ)
-                   temp_label += type_ldr[i]
+                   @tt<<t
                    if origin 
-                      manufacturer_type[i].each_with_index{ |m,j| /(#{m})/ =~ origin    #todo small/capital letter regexp
-                                           temp_label += manufacturer_ldr[i][j] if $1}  
+                    manufacturer_type[i].each_with_index{ |m,j| origin =~ /(#{m})/i     #todo small/capital letter regexp
+                                          @tt << $1 if $1}  
                    end
                  end}
     end     
-    temp_label = temp_label.compact.flatten  
-    if temp_label != [] && !@block_current[:spec] && @process[:"spec"]
-      f_log "#{temp_label} detected"
-      @regex_spec_param = "\|"+temp_label.join('|')+"\|"
-      temp_sym = temp_label.map{|e| e.to_sym}
-      block_spec = Struct.new(*(temp_sym))
-      @block_current[:spec] = block_spec.new
-    end
+      # "specific param with"+@tt.to_s
+      @block_current[:spec] = Label_specific_param.new( @tt.join(" "), @block_current[:spec])
   end
   
   def switch_header
@@ -196,28 +188,30 @@ module Sweetcheese_switch
   def switch_refact_param
     #block = @block_current
     param = @block_current[:param]
-    com   = @block_current[:comment][:DUMPED_COMMENT]
+   # com   = @block_current[:comment][:DUMPED_COMMENT]
     kai   = @kai
     ldr_list = ["SYMBOL","VAR_TYPE","VAR_FORM","VAR_DIM","VAR_NAME","UNITS","FIRST","LAST","MIN","MAX","FACTOR","DELTA"]
     temp = ""
     size_dim = []
-    ldr_list.each {|ldr| templdr = record_to_a(param[ldr]) 
-                         com[ldr] ||= []
-                         com[ldr]  += templdr[1]
-                         kai[ldr]   = templdr[0].flatten
-                         size_dim  << kai[ldr].size
-                        
-                   }
+     ldr_list.each {|ldr| ldr=ldr.sanitized_ldr.to_sym
+       
+                         kai[ldr] = (param.fetch(ldr) && param.fetch(ldr))||[]
+                         size_dim  << (kai[ldr] || []).compact.size
+                         if ldr.to_s =~/(FACTOR|FIRST)/
+       end
+       }
     #XY TO SYMBOL  #NPOINTS to VARIABLE DIMENSION
     if size_dim[0] == 0
-       kai[:'SYMBOL'] << "X" if ["FIRSTX","LASTX","XUNITS", "XFACTOR", "DELTAX"].map{|ldr| param[ldr]}.flatten.compact.join.gsub(/\s*/, "").size > 0
-       kai[:'SYMBOL'] << "Y" if ["FIRSTY","LASTY","YUNITS","MINY","MAXY"       ].map{|ldr| param[ldr]}.flatten.compact.join.gsub(/\s*/, "").size > 0
+       kai[:'SYMBOL'] = "X" if ["FIRSTX","LASTX","XUNITS", "XFACTOR", "DELTAX"].map{|ldr| param[ldr] || nil}.flatten.compact.join.gsub(/\s*/, "").size > 0
+       kai[:'SYMBOL'] = "Y" if ["FIRSTY","LASTY","YUNITS","MINY","MAXY"       ].map{|ldr| param[ldr] || nil}.flatten.compact.join.gsub(/\s*/, "").size > 0
        ["X","Y"].each{|i|   ["UNITS",          "FACTOR"].each{|ldr| l="#{ldr}".prepend(i)
-                                                                    a = (param[l] && param[l][0]) || ""
-                                                                    kai[ldr] << a}
+                                                                    a = (param[l] && param[l]) || ""
+                                                                   
+                                                                    (kai[ldr] &&    kai[ldr] = a) ||  kai[ldr] = a}
                     ["FIRST","LAST","MIN","MAX","DELTA"].each{|ldr| l="#{ldr}".concat(i)
-                                                                     a = (param[l] && param[l][0]) || ""
-                                                                    kai[ldr] << a}  }
+                                                                     a = (param[l] && param[l]) || ""
+                                                                    
+                                                                   (kai[ldr] &&    kai[ldr] = a) ||  kai[ldr] = a}  }
        size_dim[0]=kai[:'SYMBOL'].size
        kai.VAR_DIM ||=[]
        if kai.VAR_DIM.size < 1
@@ -235,28 +229,28 @@ module Sweetcheese_switch
   end
   
   
-  def record_to_a(str)
-    temp_comment=[]
-    str=[str] unless str.is_a?(Array)
-    str=str.map{|e|   temp=e.to_s
-                   if temp =~ /(?=\$\$)/        
-                   temp_comment << $'.strip  if $' 
-                   temp=($`.strip == "" && nil )|| $`.split(/\s*,\s*/).map{|x| x.strip if x}
-                   else
-                    temp = temp.split(/\s*,\s*/).map{|x| x.strip if x }
-                   end
-                   }       
-      [str.flatten.compact,temp_comment] 
-  end
+  # def record_to_a(str)
+    # temp_comment=[]
+    # str=[str] unless str.is_a?(Array)
+    # str=str.map{|e|   temp=e.to_s
+                   # if temp =~ /(?=\$\$)/        
+                   # temp_comment << $'.strip  if $' 
+                   # temp=($`.strip == "" && nil )|| $`.split(/\s*,\s*/).map{|x| x.strip if x}
+                   # else
+                    # temp = temp.split(/\s*,\s*/).map{|x| x.strip if x }
+                   # end
+                   # }       
+      # [str.flatten.compact,temp_comment] 
+  # end
   
-  def switch_dump_comment(ldr=@ldr,line=@line)
-    if /^\s*\$\$\s*(.*)/ =~ line  
-      com=@block_current[:comment][:DUMPED_COMMENT]
-      com[ldr] ||= []
-      com[ldr]  += $1.strip if  $1.strip !=""
-      line = $`
-    end
-  end
+  # def switch_dump_comment(ldr=@ldr,line=@line)
+    # if /^\s*\$\$\s*(.*)/ =~ line  
+      # com=@block_current[:comment][:DUMPED_COMMENT]
+      # com[ldr] ||= []
+      # com[ldr]  += $1.strip if  $1.strip !=""
+      # line = $`
+    # end
+  # end
   
    def switch_data_PAGE
       #todo match for symbol eg  ##PAGE= T1= 0.1144165E-03
@@ -271,10 +265,8 @@ module Sweetcheese_switch
                                               (sym=="N" && @kai.kai_indn<< i && @kai.kai_indz<< nil) ||  (@kai.kai_indz<< i && @kai.kai_indn << nil)
                                                       
                                             end           }
-      
         if /^=\s*([-+]?(?:\d*(?:\.?\d+|\.))+(?:[Ee][-+][0-9]+)?)\s*/ =~ @line
-              
-         
+   
          if sym =="N"
           @temp_n = $1.to_f
          else
@@ -289,7 +281,7 @@ module Sweetcheese_switch
   
   def switch_data_FIRST
       #todo match for float, get index of symbol from and convert to.. assign to temp pointer
-      @block_current[:kai].data_FIRST << @line.to_f
+      @block_current[:kai].data_FIRST = @line.to_f
       
          
   end
@@ -332,7 +324,7 @@ module Sweetcheese_switch
       ###
       kai.xcheck_count ||=[]
       kai.ycheck_count ||=[]
-      kai.xcheck_count +=[0,0]
+      kai.xcheck_count +=[0,-1]
       kai.ycheck_count +=[0,0]
       @check=true
       mod=(@proc && symbol_index.last) || "no"
@@ -343,8 +335,7 @@ module Sweetcheese_switch
  end
  
     def switch_data_XYDATA
-      
-      
+  
       @check2 = true
       kai=@kai
       kai.kai_DATA_CLASS<<"XYDATA"
@@ -358,17 +349,16 @@ module Sweetcheese_switch
       symbol_index=switch_symbol
       kai.SYMBOL_INDEX ||= []
       kai.SYMBOL_INDEX << symbol_index
-      
-      #f_log "SYMBOL_INDEX :  #{kai.SYMBOL_INDEX}"
-     
       ###
       x_index = symbol_index[0]
       if x_index
          switch_x_reversed(x_index)
+ 
          if kai.DELTA[x_index].to_f == 0
            kai.DELTA[x_index] = (kai.LAST[x_index].to_f-kai.FIRST[x_index].to_f)/(kai.VAR_DIM[x_index].to_f-1)
          end
          @temp_delta= kai.DELTA[x_index].to_f / kai.FACTOR[x_index].to_f
+    
       end
       
       ###
@@ -392,29 +382,28 @@ module Sweetcheese_switch
       mod=(@proc && symbol_index.last) || "no"
       @raw.last.y << kai.data_FIRST.last if mod=="xyy"
       switch_mod(mod)
-    end
+    end # of switch_data_XYDATA
     
-    def switch_data_DATA_TABLE
+    def switch_data_DATATABLE
       switch_data_XYDATA
       #f_log "done with switch_data_XYDATA "
     end
     
-    def switch_data_PEAK_TABLE
-       switch_data_base("PEAK_TABLE")
+    def switch_data_PEAKTABLE
+       switch_data_base("PEAKTABLE")
     end
     
     def switch_data_XYPOINTS
       switch_data_XYDATA
     end
     
-    def switch_data_PEAK_ASSIGNMENT
-      #switch_ldr_entry
+    def switch_data_PEAKASSIGNMENT
       
-      switch_data_base("PEAK_TABLE")
+      switch_data_base("PEAKTABLE")
       @h=@g ##todo
     end
     
-    def switch_data_END_NTUPLES
+    def switch_data_ENDNTUPLES
       @h = @g
       stop_it if @process[:point] =~ /first_n/
       ## if @process[:data]=~ /yes/i
@@ -424,16 +413,6 @@ module Sweetcheese_switch
       #block_init
     end
     
-    def switch_ldr_entry
-      if @line 
-       #f_log "@ldr: #{@ldr} - @temp_current is a class: #{@temp_current.class}"
-       # [@temp_current,@kai].each{|block| block[@ldr] ||=[]
-                                  # block[@ldr] << @line.strip }
-            @temp_current[@ldr] ||=[]
-            @temp_current[@ldr] << @line.strip                      
-      end
-      @line=nil
-    end 
     
     def switch_mod(mod)
       @h = case mod
@@ -441,16 +420,18 @@ module Sweetcheese_switch
         when "xyxy" then  @s32
         when "no"   then  @s30
       end
-      puts "mod #{mod}"
     end
     
     def switch_x_reversed(i)
       kai=@kai
-      kai.x_reversed ||=[]
+      param=@kai
+    
       if !i
       i=kai.SYMBOL_INDEX.last[0]
       end
-      kai.x_reversed << (kai.FIRST[i] > kai.LAST[i])
+     
+      @kai[:x_reversed] = (param.FIRST[i] > param.LAST[i])
+          
     end
     
   def switch_data
@@ -462,14 +443,14 @@ module Sweetcheese_switch
     param.kai_indz||=[]
     param.kai_indn||=[]
     @check2 = false
-    switch_dump_comment
-    eval("switch_data_"+@ldr.to_s.gsub(/ +/,"_")) 
-    f_log("done with switch_data_"+@ldr.to_s.gsub(/ /,"_"))
-    switch_ldr_entry 
+    #switch_dump_comment
+    send("switch_data_"+@ldr.to_s) 
+    @line && (@temp_current[@ldr] = @line) && @line=nil 
+     
     #@temp_current.each_pair{|k ,v| f_log "#{k}#{" "*(20-k.size)}  =  #{v}"}
   end
   
-  def switch_symbol(block=@temp_current,ldr='XYDATA',str=@line,symbol=@block_current[:kai].SYMBOL)
+  def switch_symbol(block=@temp_current,ldr='XYDATA',str=@line,symbol=@block_current[:param].SYMBOL)
     
     symbol = ['X','Y'] if !symbol.is_a?(Array)
     symbol +=['X','Y'] if symbol.compact.size < 2
@@ -482,12 +463,11 @@ module Sweetcheese_switch
     perm= symbol.compact.uniq.permutation(2).to_a
     
     while ind[0..1] == []
-      a=perm.pop  
-      ##X++(Y..Y)
+      a=perm.pop 
+      ##X++(Y..Y) 
       if str =~ /^\s*\(?(#{a[0]})\+{1,2}\((#{a[1]})\.{1,2}#{a[1]}\)/
         #str ~ param[ldr].last
         #if /^\s*\((?<x>\w+)\+{1,2}\((?<y>\w+)\.{1,2}\k<y>\)/ =~ param[ldr].last
-        
          ind=[symbol.index($1),symbol.index($2),a[0],a[1],"xyy"]
        ##XY..XY
       elsif  str =~ /^\s*\(?(?:(#{a[0]})(#{a[1]})\.{0,2}#{a[0]}#{a[1]}\)?\s*)/ #todo recheck this regexp
@@ -499,7 +479,7 @@ module Sweetcheese_switch
   end
   
   def switch_uncl_ldr
-    @ldr=@ldr.to_sym
+   # @ldr=@ldr.to_sym
     switch_base
   end
  
@@ -540,7 +520,6 @@ module Sweetcheese_switch
   
   def switch_check_out
      process_data if @proc =~ /yes/i
-     
      @kai.ldr_extract=@extract.keys
      @kai.ldr_extract.uniq! if @kai.ldr_extract
      stop_it if @process[:point].to_s =~ /first_page/
@@ -576,7 +555,7 @@ module Sweetcheese_switch
      end
      end
         line << "\n____exit_checkpoint____"
-     f_log line
+     
      puts line  
     
   end

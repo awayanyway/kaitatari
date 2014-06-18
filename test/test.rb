@@ -28,31 +28,51 @@ if __FILE__ == $0
  extract_label="TITLE, DATA TYPE,.OBSERVE NUCLEUS,.SOLVENT NAME,.PULSE SEQUENCE,.OBSERVE FREQUENCY"
 #j=Jcampdx.new(":file /home/pi/workspace/kaitatari20140311/samples/1D1H.dx :process extract #{extract_label} extract_first   :output_path /home/pi/Desktop")
 file="/home/pi/workspace/kaitatari20140311/samples/1D1H.dx"
-#file="/home/pi/workspace/kaitatari20140311/samples/BRUKNTUP.DX" 
+file="/home/pi/workspace/kaitatari20140311/samples/BRUKNTUP.DX" 
 #file="/home/pi/workspace/kaitatari20140311/samples/blckpac1.jdx" 
-file="/home/pi/workspace/kaitatari20140311/samples/blckpkt1.jdx" 
+#file="/home/pi/workspace/kaitatari/samples/blckpkt1.jdx" 
+fileo="/home/pi/workspace/kaitatari/samples/blckpkt1-.jdx" 
 #file="/home/pi/workspace/kaitatari20140311/samples/small2.jdx" 
 
+#file="/home/pi/workspace/kaitatari/samples/chart.jdx"
+#file ="/home/pi/workspace/lsi-rails-prototype/tmp/upload/1402479917-4158-0449/chart.jdx"
+#fileo ="/home/pi/workspace/lsi-rails-prototype/tmp/upload/1402479917-4158-0449/charto.jdx"
+#fileo= "/home/pi/workspace/lsi-rails-prototype/tmp/upload/1402477023-2035-1977/jdx_blckpac1.jdx"
+
+ a=Jcampdx.load_jdx(":file #{file} :process  point raw :output lsi :output_file #{fileo} ")
+
+ jdx_data = Kai.new(":file yaml|#{fileo}").result 
+        @kumara= Kai.load(":file yaml|#{fileo} :return_as kumara")
+       #  puts "~"*60+"\n"+@kumara.inspect.slice(0..200)+"\n"+"~"*60
+
+       
+         m     = jdx_data.detect(:method)
+        puts "hello method #{m}"
+        puts "hello title #{jdx_data.detect(:title)}" 
+ 
+Jcampdx.load_yaml_2_ps(":file #{fileo} ")
 # puts "testfile"
 # puts File.file?(file)
 # puts Kai.test_file(file)
 # puts Kai.test_file("jdx|#{file}","jdx") 
 # puts "testfile over"
+#process_opt="header uncl spec param data"
 
+#@dx_data=Kai.new(":logging y  :file jdx|#{file} :tab all :process #{process_opt} point raw :output rb ps data_y raw   :output_path /home/pi/Desktop/output_ps"  )
+#@dx_data=Kai.load(":logging y  :file jdx|#{file} :tab all :process #{process_opt} point raw :output rb ps data_y raw   :output_path /home/pi/Desktop/output_ps"  )
 
-@dx_data=Kai.new(":logging y  :file jdx|#{file} :tab all :process uncl param data point raw :output rb ps data_y raw ldr uncl  :output_path /home/pi/Desktop/output_ps"  )
 # @dx_data.result.output_kaitatari
-puts @dx_data.class
-puts @dx_data.flotr2_data.class
-puts @dx_data.flotr2_data.respond_to?(:to_kumara)
+#puts @dx_data.class
+#puts @dx_data.flotr2_data.class
+#puts @dx_data.flotr2_data.respond_to?(:to_kumara)
 #puts @dx_data.flotr2_data.key?(:x_reversed)
-d=@dx_data.flotr2_data
+#d=@dx_data.flotr2_data
 
 
-d=d.to_kumara
+#d=d.to_kumara
 #d.xy=nil
 #f_log d.inspect
-puts d.chip_it(1..15)
+#puts d.chip_it(1..15)
 
 
 
@@ -88,6 +108,8 @@ puts d.chip_it(1..15)
 #j.output_ps
 
 
-puts "well done!"
+puts "well done!\n"+"      ~~~~~~"*7
         
 end
+
+

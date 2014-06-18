@@ -27,7 +27,7 @@ Label_header_info_irug_sym =[
 :'$OTHER'
 ]
  
-Label_header_info_irug = Label_header_info_irug_sym.map{|s| s.to_s}
+Label_header_info_irug_s = Label_header_info_irug_sym.map{|s| s.to_s}
   
 
 end
