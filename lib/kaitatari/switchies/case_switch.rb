@@ -293,19 +293,22 @@ module Sweetcheese_switch
       raw << Hua_point.new
       raw.last.n << @temp_n if @temp_n
       raw.last.z << @temp_z if @temp_z
-      @temp_n,@temp_z=nil,nil
+      @temp_n,@temp_z,@totalx=nil,nil,0
       
       ###
       symbol_index=switch_symbol
       kai.SYMBOL_INDEX ||= []
       kai.SYMBOL_INDEX << symbol_index
       
-      #f_log "SYMBOL_INDEX :  #{kai.SYMBOL_INDEX}"
      
       ###
       x_index = symbol_index[0]
       if x_index
-         switch_x_reversed(x_index)
+        @x_rev = switch_x_reversed(x_index)
+         if kai.FACTOR[x_index] && kai.FACTOR[x_index].to_f != 0 && kai.FIRST[x_index]
+            @lastx = kai.FIRST[x_index].to_f / kai.FACTOR[x_index].to_f 
+            puts "first x = "+@raw.last.x.inspect
+         end
       end
       
       ###
@@ -318,13 +321,15 @@ module Sweetcheese_switch
       kai.kai_DATA_CLASS<<clas
       kai.kai_DATA_TYPE<<@line
       
-      # if kai.FACTOR[x_index] && kai.FACTOR[x_index].to_f != 0
-      # @raw.last.x << kai.FIRST[x_index].to_f / kai.FACTOR[x_index].to_f 
-      # end
+      
       ###
       kai.xcheck_count ||=[]
       kai.ycheck_count ||=[]
-      kai.xcheck_count +=[0,-1]
+      if @lastx
+         kai.xcheck_count +=[0,0]
+      else
+         kai.xcheck_count +=[0,-1]
+      end
       kai.ycheck_count +=[0,0]
       @check=true
       mod=(@proc && symbol_index.last) || "no"
@@ -343,7 +348,8 @@ module Sweetcheese_switch
       raw << Hua_point.new
       raw.last.n << @temp_n if @temp_n
       raw.last.z << @temp_z if @temp_z
-      @temp_n,@temp_z=nil,nil
+      
+      @temp_n,@temp_z,@totalx=nil,nil,0
       
       ###
       symbol_index=switch_symbol
@@ -352,20 +358,23 @@ module Sweetcheese_switch
       ###
       x_index = symbol_index[0]
       if x_index
-         switch_x_reversed(x_index)
- 
+         @x_rev=switch_x_reversed(x_index)
+          if kai.FACTOR[x_index] && kai.FACTOR[x_index].to_f != 0 && kai.FIRST[x_index]
+            @lastx = kai.FIRST[x_index].to_f / kai.FACTOR[x_index].to_f 
+            puts "first x = "+@lastx.inspect
+         end
          if kai.DELTA[x_index].to_f == 0
            kai.DELTA[x_index] = (kai.LAST[x_index].to_f-kai.FIRST[x_index].to_f)/(kai.VAR_DIM[x_index].to_f-1)
          end
          @temp_delta= kai.DELTA[x_index].to_f / kai.FACTOR[x_index].to_f
     
       end
-      
+          
       ###
       
       if kai.data_FIRST.size == @ntuple.pred
        y_index = symbol_index[1]
-       kai.data_FIRST << kai.FIRST[y_index].to_f        
+       kai.data_FIRST << (kai.FACTOR[y_index] && kai.FIRST[y_index].to_f/ kai.FACTOR[y_index].to_f) || kai.FIRST[y_index].to_f        
       end
       
       kai.kai_DATA_TYPE<<@line
@@ -376,7 +385,11 @@ module Sweetcheese_switch
       ###
       kai.xcheck_count ||=[]
       kai.ycheck_count ||=[]
-      kai.xcheck_count +=[0,-1]
+      if @lastx
+         kai.xcheck_count +=[0,0]
+      else
+         kai.xcheck_count +=[0,-1]
+      end
       kai.ycheck_count +=[0,0]
       @check=true
       mod=(@proc && symbol_index.last) || "no"
@@ -386,7 +399,6 @@ module Sweetcheese_switch
     
     def switch_data_DATATABLE
       switch_data_XYDATA
-      #f_log "done with switch_data_XYDATA "
     end
     
     def switch_data_PEAKTABLE
@@ -395,6 +407,11 @@ module Sweetcheese_switch
     
     def switch_data_XYPOINTS
       switch_data_XYDATA
+    end
+    
+    def switch_data_PEAKASSIGNMENTS
+      switch_data_PEAKASSIGNMENT
+     
     end
     
     def switch_data_PEAKASSIGNMENT
@@ -409,17 +426,20 @@ module Sweetcheese_switch
       ## if @process[:data]=~ /yes/i
         ##todo 
       ##end
-      #@s1=@s1_all
-      #block_init
+     
     end
     
     
     def switch_mod(mod)
+       puts 'point type :'+mod.inspect
       @h = case mod
         when "xyy"  then  @s31
         when "xyxy" then  @s32
+     #   when "xyma" then  @s33 #todo xyma
         when "no"   then  @s30
+          
       end
+     
     end
     
     def switch_x_reversed(i)
@@ -430,7 +450,7 @@ module Sweetcheese_switch
       i=kai.SYMBOL_INDEX.last[0]
       end
      
-      @kai[:x_reversed] = (param.FIRST[i] > param.LAST[i])
+      (i && @kai[:x_reversed] = (param.FIRST[i] > param.LAST[i]))|| nil
           
     end
     
@@ -447,7 +467,7 @@ module Sweetcheese_switch
     send("switch_data_"+@ldr.to_s) 
     @line && (@temp_current[@ldr] = @line) && @line=nil 
      
-    #@temp_current.each_pair{|k ,v| f_log "#{k}#{" "*(20-k.size)}  =  #{v}"}
+    #info_line ="" ;@temp_current.each_pair{|k ,v| info_line << k.inspect+" "*(20-k.size)+"  =  "+v.inspect}
   end
   
   def switch_symbol(block=@temp_current,ldr='XYDATA',str=@line,symbol=@block_current[:param].SYMBOL)
@@ -489,23 +509,35 @@ module Sweetcheese_switch
   def switch_31
     #todo in some file the first x of each dta line is rounded so might want to use FIRSTX and increment  only
     
-    @temp=@temp.to_f
-    x=@temp-@temp_delta
-    @kai.xcheck_count[-1] +=1
-    @kai.xcheck_count[-2] +=1 if checkpoint(x,@raw.last.x.last)
+   
+   
+    
     if @check
     firsty=@raw.last.y.last.to_f
     @raw.last.y.pop
     @kai.ycheck_count[-1] +=1
     end
-    
+   
     check=@check
     tempy,count,@check = *line_yyy_translator(@line) 
     count -=1 if @check
-    
+     
+     @temp=@temp.to_f
+    x=@temp#-@temp_delta
+     d= @temp-@lastx
+    if count >1
+     @kai.xcheck_count[-1] +=1
+   
+     if (checkpoint(x,@lastx))
+        @kai.xcheck_count[-2] +=1 
+     elsif  (!@x_rev && (d/@temp_delta.abs <0.1) )
+       # @temp=@lastx   
+     end
+    end
     @raw.last.y +=  tempy
     @raw.last.x += xline_generator(@temp, count,@temp_delta )
-    
+    @lastx=@temp + @temp_delta*count # @raw.last.x.last
+    @totalx += count 
     @kai.ycheck_count[-2] +=1 if check && checkpoint(firsty,tempy[0],"y")        
     @line=nil  
   end
@@ -513,7 +545,7 @@ module Sweetcheese_switch
   
   def switch_32
     @raw.last.y << @temp.pop.to_f 
-   
+   @totalx +=1
     @raw.last.x << @temp.pop.to_f 
    
   end
@@ -523,9 +555,8 @@ module Sweetcheese_switch
      @kai.ldr_extract=@extract.keys
      @kai.ldr_extract.uniq! if @kai.ldr_extract
      stop_it if @process[:point].to_s =~ /first_page/
-     #f_log @raw[-1][:x].zip(@raw[-1][:y])[0..10]
      pn = @raw[-1].n[-1]
-     px = @raw[-1].x.size
+     px = @totalx #@raw[-1].x.size
      py = @raw[-1].y.size
      pz = (@raw[-1].z.size < 2 && @raw[-1].z[-1]) || @raw[-1].z.size
      cx  = @kai.xcheck_count[-2..-1]
@@ -555,7 +586,7 @@ module Sweetcheese_switch
      end
      end
         line << "\n____exit_checkpoint____"
-     
+     @lastx=nil
      puts line  
     
   end
