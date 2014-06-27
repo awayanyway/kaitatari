@@ -42,15 +42,15 @@ module Pseudo_digit
     "p"=> " x-7",
     "q"=> " x-8",
     "r"=> " x-9",
-    "S" => "*1 ",
-    "T" => "*2 ",
-    "U" => "*3 ",
-    "V" => "*4 ",
-    "W" => "*5 ",
-    "X" => "*6 ",
-    "Y" => "*7 ",
-    "Z" => "*8 ",
-    "s" => "*9 ",
+    "S" => "*0 ",        #"*1 ",
+    "T" => "*1 ",        #"*2 ",
+    "U" => "*2 ",        #"*3 ",
+    "V" => "*3 ",        #"*4 ",
+    "W" => "*4 ",        #"*5 ",
+    "X" => "*5 ",        #"*6 ",
+    "Y" => "*6 ",        #"*7 ",
+    "Z" => "*7 ",        #"*8 ",
+    "s" => "*8 ",        #"*9 ",
     "+" => "  ",
     "-" => " -"
   }
@@ -81,8 +81,10 @@ module Pseudo_digit
   end
 
   def checkpoint(a=0.0, b=0.0,s="x", diff=0)
+   
     check3 = (a.to_f.round(8) <=> b.to_f.round(8))
-   # f_log "check <#{s}> #{a} = #{b} is #{check3 == diff}"
+    #puts a.inspect+' '+b.inspect if !(check3==diff) 
+  
     check3 == diff
   end
 
@@ -95,7 +97,7 @@ module Pseudo_digit
     sumy = 0.0
     
     while $2.to_s != ""
-      [ $3.to_i , 1].max.times {
+      ( $3.to_i + 1).times {
         diff = $1=="x"
         y= $2.to_f # if 
         sumy =  ( !diff  &&  y ) || y + sumy.to_f # sumy.to_f needed if summy was ? and $1 is now x)
