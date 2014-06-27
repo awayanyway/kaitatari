@@ -1,4 +1,5 @@
 require_relative "../core_ext"
+require 'json'
 
 module Sweet_output
  include Data_structure
@@ -53,6 +54,17 @@ def initialize(process={})
 end
 
 def uniq_ldrs
+  lab=[]
+  k=self.keys
+  line=[]
+  k.each{|key| t=self[key]
+   
+     (t.is_a?(Hash)   &&   lab += t.keys) || ( t.respond_to?(:members) && t.members.each{|m| t[m] && lab << m})
+   }
+ 
+  lab.compact.uniq
+end
+def uniq_ldrs_o
   lab=[]
   k=self.keys
   line=[]
@@ -387,8 +399,9 @@ class Ropere<Hash
        h.kai_BLOCK_ID[q]=self[:kai_BLOCK_ID][i]
        h.xaxis_reversed[q]=(self[:x_reversed] && self[:x_reversed][i]) || Array.new(h.xy[q].size).map{|e| false}
        temp={}
-       self[:ldr][i].each{|s| self[s].is_a?(Array) && self[s].flatten.compact != [] && temp[s]=self[s].flatten}
-       h.ldr[q]=temp
+       self[:ldr][i].each{|s| self[s].is_a?(Array) && self[s][i]  && temp[s]=self[s][i].join("\n")}
+       h.ldr[q]= temp ##.to_json
+       
        [:SYMBOL,:VAR_NAME,:kUNITS,:UNITS,:FACTOR,:kFACTOR].each{|s| 
                                                 h[s][q]=[]
                                                 ixy.each{|j|h[s][q]<<[self[s][i][j[0]],self[s][i][j[1]]]}
@@ -417,7 +430,8 @@ class Kumara<Moa  #<Ropere# #todo structure vs Hash
    
    def initialize(h=nil)
     
-     h && Moa.members.each{|m|  h[m] && self[m]=h[m]}
+     h && Moa.members.each{|m|   #
+                                 h[m] && self[m]=h[m]}
      
      check || (b=Kumara.blank && Moa.members.each{|m|  self[m]=b[m]})
      
@@ -444,6 +458,7 @@ class Kumara<Moa  #<Ropere# #todo structure vs Hash
      m.z=[[0]]
      m.xy=[[[[10,10], [90,90], [50,50], [10,90],[90,10]]]]
      m.kai_BLOCK_ID=[[-1]]
+     m.ldr=[ {:'TITLE' => '..',:'OWNER'=> '..'}] #{:'Headers'=>
      m
    end
    
@@ -467,12 +482,15 @@ class Kumara<Moa  #<Ropere# #todo structure vs Hash
      m.z=[[0]]
      m.xy=[[[[10,10], [90,90], [50,50], [10,90],[90,10]]]]
      m.kai_BLOCK_ID=[[-1]]
+     m.ldr=[ {:'TITLE' => '..',:'OWNER'=> '..'}] #{:'Headers'=>
      Moa.members.each{|k|   self[k]=m[k]}
    end
+   
    def check
     r= Moa.members.map{|m|  (self[m].is_a?(Array) && self[m].size )|| nil}
     r.size == Moa.members.size &&    r.max == r.min
    end
+   
    def no_data(i=nil)
      temp=self[xy]
      
@@ -498,10 +516,14 @@ class Kumara<Moa  #<Ropere# #todo structure vs Hash
 
    def chip_it(r=0..-1,block=0,page=0,limit=2048)  
    kaka=self.slice(block)
- 
+   
+   
    [:TYPE,:SYMBOL,:xaxis_reversed,:kUNITS,:UNITS,:FACTOR,:kFACTOR,:xy,:z,:page].each{|m| kaka[m]=kaka[m][page]}
+   
    kaka.xy=kaka.xy.trim_point(r,limit)
-  
+ # Moa.members.each{|m|   puts "Kumara chip"+m.inspect+" = "+kaka[m].inspect.slice(0..60) }
+ # kaka[:ldr].each_pair{|s,v| puts "Kumara chip ldr :"+s.inspect+" = "+v.inspect.slice(0..60)}
+ # puts 'json  html : '+ kaka[:ldr].to_json.html_safe.inspect.slice(0..80)
    kaka 
  
    end
@@ -510,6 +532,6 @@ class Kumara<Moa  #<Ropere# #todo structure vs Hash
   
 
   
-end #of class
+end #of class Moa
 
 end #end of module
