@@ -195,7 +195,7 @@ module Output
      if !opt[:data_xy]
       b,p = opt[:block] ,opt[:page]
      opt[:data_y]||=@data_output[b][:raw_point][p][:y] if b && p
-      opt[:data_y]=opt[:data_y].trim_point(0..-1,800) || [1]
+      opt[:data_y]=opt[:data_y].trim_point(0..-1,1024) || [1]
      end
      
      opt[:orientation] = 1
@@ -203,7 +203,7 @@ module Output
      opt[:graph_position]=[0,0,1.0,0.9]
      opt[:graph_ldr_position]=[0,0.9]
      opt[:size]= [8.3,11.7,"inch"]   
-     opt[:line_width]=2.2
+     opt[:line_width]=4.2
      opt[:scale_font]=30.0
      ps =  Postscript_output.new(opt)
      ps.build_ps

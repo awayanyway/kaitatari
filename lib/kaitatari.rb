@@ -194,10 +194,22 @@ class Jcampdx
   def ps_generator
  
     temp=@tab_data.slice_4ldr(:raw_point).to_flotr2.to_kumara.chip_it
+   
+    
+   tempxy=temp.xy
+    if temp.xaxis_reversed
+      
+      xy=tempxy.transpose
+      tempxy=xy[0].zip(xy[1].reverse)
+      
+    else
+       
+    end
     opt={
-     :data_xy => temp.xy,
+     :data_xy => tempxy,
      :resolution => 600,
     }
+    
     output_cw(opt) 
   end
   
