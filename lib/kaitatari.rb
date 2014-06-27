@@ -26,7 +26,7 @@ attr_accessor :opt, :result, :type ,:flotr2_data
 attr_reader :data
   
 def initialize(opt)
-  f_log
+  #f_log
   opt=opt.to_s unless opt.is_a?(String)
   opt =~ /(:file)\s*(\w+|)?/
   return nil  unless $1
@@ -126,12 +126,12 @@ class Jcampdx
    wicked_setup(*p)
    
    if @option_hash[:logging]
-      @@logging = true
+     # @@logging = true
    end
    
-   f_log(false)
-   f_log p.to_s
-   f_log "started at #{t}"
+   #f_log(false)
+   #f_log p.to_s
+   #f_log "started at #{t}"
   end
    
     
@@ -141,8 +141,8 @@ class Jcampdx
    
     
     @option_hash.each_pair{|k,v| line << " "*(15-k.to_s.size)+"@#{k} = #{v}\n"} 
-    puts line
-    f_log(line,-1)
+    #puts line
+    #f_log(line,-1)
   end
      
   def option_list
@@ -292,8 +292,7 @@ class Jcampdx
     return if !@option_hash[:output].is_a?(Hash)
     @output_list.each{|o| 
                            if @option_hash[:output][o.to_sym]
-                           #f_log "refact option before output_#{o}"
-                           puts "output #{o}"
+                           #puts "output #{o}"
                            ref_output_option(o.to_sym)
                            eval("output_#{o}") 
                            end }
@@ -312,7 +311,6 @@ class Jcampdx
      end
      @option_hash.delete(:file)
      @option_hash=@option_hash.merge(temp_hash)
-     #f_log " @option_hash now = #{@option_hash}"
      if @option_hash[:file] #&& !File.basename(@option_hash[:file]).to_s =~ /TEST/
       
         @option_hash[:filename] = File.basename(@option_hash[:file])

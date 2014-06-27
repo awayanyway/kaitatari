@@ -20,7 +20,7 @@ module Output
      file = @option_hash[:output_file] + ".rb"
      ofile=File.new(file, "w+")
      ofile.write temp 
-     f_log " in file: #{file}"
+     # " in file: #{file}"
      ofile.close
      temp
    end
@@ -31,7 +31,7 @@ module Output
      file = @option_hash[:output_file] + ".msh"
      ofile=File.new(file, "w+")
      ofile.write temp 
-     f_log " in file: #{file} @ #{Time.now}"
+     ## " in file: #{file} @ #{Time.now}"
      ofile.close
      temp
    end
@@ -41,7 +41,7 @@ module Output
      file = @option_hash[:output_file] + ".yaml"
      ofile=File.new(file, "w+")
      ofile.write temp 
-     f_log " in file: #{file} @ #{Time.now}"
+     ##" in file: #{file} @ #{Time.now}"
      ofile.close
      temp
    end   
@@ -56,7 +56,7 @@ module Output
      ofile=File.new(file, "w+")
      #format = [20, 20].map{ |a| "%#{a}s" }.join(" ")  
      ofile.write(temp) #if c.modulo(3) == 0.0}  ##sampling point
-     f_log " in file: #{file} @ #{Time.now}"
+     ## " in file: #{file} @ #{Time.now}"
      ofile.close
      temp
    end
@@ -69,7 +69,7 @@ module Output
                         block[0].each_pair{|k ,v| ofile.write("###{k}=#{jdx_format(v)} \n" )}                                                         #c=0
                         block[1][-2].zip(block[1][-1]).each {|a| ofile.write("#{a[0]} #{a[1]} \n ")}
                         }   
-     f_log " in file: #{file} @ #{Time.now}"
+     ## " in file: #{file} @ #{Time.now}"
      ofile.close
    end
    
@@ -108,7 +108,7 @@ module Output
               opt[:"#{o}"]=($` && $`.to_s.gsub(/[^ \$\.,\d\w#]/," ").strip)||tempa.to_s.gsub(/[^ \$\.,\d\w#]/," ").strip #todo check regex 
            end
         }
-    #f_log "#{opt}" 
+    ### "#{opt}" 
     
     #######
     
@@ -169,7 +169,7 @@ module Output
 
    
    def output_ps(opt={})
-     #f_log "check option"
+     ### "check option"
      if opt=={}
      opt= @option_hash[:output][:ps]  
      end
@@ -210,9 +210,9 @@ module Output
      file = opt[:file] || @option_hash[:file]  
      ofile=File.open(file, "w+")
      ofile.write(ps.output_text)
-     f_log " in file: #{file} @ #{Time.now}"
+     ## " in file: #{file} @ #{Time.now}"
      ofile.close
-     f_log (" close file: #{file} ")
+     ## (" close file: #{file} ")
 
    end
    

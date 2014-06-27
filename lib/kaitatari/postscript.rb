@@ -101,7 +101,6 @@ end
    #data points are scaled to integer values and offset to the graph window
    max,min=data_array.max,data_array.min
    f= @f[axe]/ (max-min)
-   #f_log "axe=#{axe} min =#{min} max=#{max} f=#{f} \n #{@graph}"
    a=data_array.map{|e| ((e-min) * f ).round}  #+ @graph[axe]
    
    return a
