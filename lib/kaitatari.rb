@@ -126,7 +126,7 @@ class Jcampdx
    wicked_setup(*p)
    
    if @option_hash[:logging]
-     # @@logging = true
+      @@logging = true
    end
    
    #f_log(false)
@@ -282,7 +282,7 @@ class Jcampdx
     @data_output=switcher.output #data
     #opt={:data_y => data[:y], :ldr => data[:ldr] }
     output_cw()
-    puts "done with processor_cw" 
+    #puts "done with processor_cw" 
   end
 
 

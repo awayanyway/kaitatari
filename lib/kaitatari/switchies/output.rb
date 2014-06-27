@@ -262,7 +262,7 @@ class Ropere<Hash
        end      
      end
      ind= self.map_ind4data.compact
-     puts ind.inspect
+     #puts ind.inspect
     
          r= m[ind[0]]    if !b
          r= m if b.to_s =~ /all/   

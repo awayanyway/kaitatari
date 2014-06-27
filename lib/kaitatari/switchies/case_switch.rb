@@ -307,7 +307,7 @@ module Sweetcheese_switch
         @x_rev = switch_x_reversed(x_index)
          if kai.FACTOR[x_index] && kai.FACTOR[x_index].to_f != 0 && kai.FIRST[x_index]
             @lastx = kai.FIRST[x_index].to_f / kai.FACTOR[x_index].to_f 
-            puts "first x = "+@raw.last.x.inspect
+            #puts "first x = "+@raw.last.x.inspect
          end
       end
       
@@ -361,7 +361,7 @@ module Sweetcheese_switch
          @x_rev=switch_x_reversed(x_index)
           if kai.FACTOR[x_index] && kai.FACTOR[x_index].to_f != 0 && kai.FIRST[x_index]
             @lastx = kai.FIRST[x_index].to_f / kai.FACTOR[x_index].to_f 
-            puts "first x = "+@lastx.inspect
+            #puts "first x = "+@lastx.inspect
          end
          if kai.DELTA[x_index].to_f == 0
            kai.DELTA[x_index] = (kai.LAST[x_index].to_f-kai.FIRST[x_index].to_f)/(kai.VAR_DIM[x_index].to_f-1)
