@@ -44,15 +44,15 @@ class Switchies
             end
             }
  
-   #@v=true #logging
+   
     
     @exit = {:'Default' => -> {@line=nil}  }
    
 
-    @g =  { :'case_init_ldr'  => -> {switch_init_ldr},    #match ldr     ##
-            #:'case_init_com'  => -> {switch_comment},    #match comment $$
+    @g =  { :'case_init_ldr'  => -> {switch_init_ldr},    
+            
             :'case_multi_line'=> -> {switch_multi_line},
-          #  :'case_init_com'  => -> {switch_comment},
+         
             :'Default'        => -> {@line=nil}
           }      
     @g[:'case_init_ldr']= -> {reinitialize_extract;switch_init_ldr} if @process[:extract_all]   
@@ -60,16 +60,16 @@ class Switchies
    
    ### 1st floor switch : processing LDR
     @s1_all = {
-            :'case_extract'        => -> {                                                        switch_extract},         #f_log "@s1:extract"       if @v;   
-            :'case_header'         => -> { @s1=@s1_header;@key=:header;@temp_current = @block_current[:header];switch_header},         #f_log "@s1:header"        if @v;    #match LDR Regex_header                header 
-            :'case_sample_info'    => -> { @s1=@s1_info  ;@key=:info  ;@temp_current = @block_current[:info]  ;switch_sample_info},    #f_log "@s1:sample_info"   if @v;    #match LDR Regex_sample_info           info
-            :'case_spec_param'     => -> { @s1=@s1_spec  ;@key=:spec  ;@temp_current = @block_current[:spec]  ;switch_spec_param},     #f_log "@s1:spec_param"    if @v;    #match LDR regex_spec_param (variable) spec
-            :'case_spectral_param' => -> { @s1=@s1_param ;@key=:param ;@temp_current = @block_current[:param] ;switch_spectral_param}, #f_log "@s1:spectral_param"if @v;    #match LDR Regex_spectral_param        param
-            :'case_data'           => -> { switch_refact_param;                                                           #f_log "@s1:data"          if @v;    # 
-                                           @s1=@s1_data  ;@key=:data  ;@temp_current = @block_current[:data]  ;switch_data},           #                                    #match LDR Regex_spectral_param        data
+            :'case_extract'        => -> {                                                        switch_extract},       
+            :'case_header'         => -> { @s1=@s1_header;@key=:header;@temp_current = @block_current[:header];switch_header},        
+            :'case_sample_info'    => -> { @s1=@s1_info  ;@key=:info  ;@temp_current = @block_current[:info]  ;switch_sample_info},   
+            :'case_spec_param'     => -> { @s1=@s1_spec  ;@key=:spec  ;@temp_current = @block_current[:spec]  ;switch_spec_param},    
+            :'case_spectral_param' => -> { @s1=@s1_param ;@key=:param ;@temp_current = @block_current[:param] ;switch_spectral_param},
+            :'case_data'           => -> { switch_refact_param;                                                           
+                                           @s1=@s1_data  ;@key=:data  ;@temp_current = @block_current[:data]  ;switch_data},          
             :'case_end'            => -> {@key=nil;@line=nil;@s1=@s1_end; @h =@g},
-            :'case_uncl_ldr'       => -> {                @key=:uncl  ;@temp_current = @block_current[:uncl]  ;switch_uncl_ldr},       #f_log "@s1:uncl_ldr"      if @v;    #match LDR Regex_uncl_ldr           uncl
-           # :'case_comment'        => -> { @s1=@s1_com;switch_comment},                                                   #f_log "@s1:comment"       if @v;    #match comment                              com
+            :'case_uncl_ldr'       => -> {                @key=:uncl  ;@temp_current = @block_current[:uncl]  ;switch_uncl_ldr},      
+                                                       
             :'Default' => -> {@line=nil; @h =@g} #@ldr=nil;
           }
     
@@ -79,9 +79,9 @@ class Switchies
                   
                         }
      @s1_extract  = {                                            
-            :'case_extract'        => -> {switch_extract},       #  f_log "@s1:extract"       if @v; #match LDR Regex_header                header 
-            :'Default'             => -> {@s1=@s1_all;@h=@s1}   #  f_log "@s1:default"       if @v 
-                    }                                            #                                  
+            :'case_extract'        => -> {switch_extract},    
+            :'Default'             => -> {@s1=@s1_all;@h=@s1} 
+                    }                                         
      
      ht=Hash[['@s1_header','@s1_info', '@s1_spec','@s1_param' ,'@s1_data','@s1_uncl_ldr'].zip(['header','sample_info','spec_param','spectral_param','data','uncl_ldr'])]
      
@@ -227,7 +227,7 @@ class Switchies
     #return "exit" if @h == @exit 
     @line=line#.to_s.strip 
     while @line   #.to_s != ""  
-      #f_log "\n@line : #{@line}"
+   
       switch(@h)
     end
     
@@ -269,8 +269,8 @@ class Switchies
    f=symbol_ind.map{|e| (@kai.FACTOR.fetch(e) && @kai.FACTOR.fetch(e).to_f) || 1 }   
    @processed.last.x=data_str2arr(@raw.last.x,f[0],p)
    @processed.last.y=data_str2arr(@raw.last.y,f[1],p)
-   f_log @processed.last.x[0..10]
-   f_log @processed.last.y[0..10]
+  
+  
   end
    
    def data_str2arr(str="",factor=1,precision=16)
