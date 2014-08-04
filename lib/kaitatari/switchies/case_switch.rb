@@ -256,7 +256,7 @@ module Sweetcheese_switch
       #todo match for symbol eg  ##PAGE= T1= 0.1144165E-03
       #@kai.SYMBOL ||=[]
       @ntuple +=1
-      if    /\s*(#{@kai.SYMBOL.join('|')})(\s+|\s*=+)/ =~ @line ##todo check this matching
+      if    /^\s*(#{@kai.SYMBOL.join('|')})(\s+=|=)/ =~ @line ##todo check this matching
        sym=$1
        @line = $'
      
@@ -265,8 +265,8 @@ module Sweetcheese_switch
                                               (sym=="N" && @kai.kai_indn<< i && @kai.kai_indz<< nil) ||  (@kai.kai_indz<< i && @kai.kai_indn << nil)
                                                       
                                             end           }
-        if /^=\s*([-+]?(?:\d*(?:\.?\d+|\.))+(?:[Ee][-+][0-9]+)?)\s*/ =~ @line
-   
+        if /^\s*([-+]?(?:\d*(?:\.?\d+|\.))+(?:[Ee][-+][0-9]+)?)\s*/ =~ @line
+       
          if sym =="N"
           @temp_n = $1.to_f
          else
@@ -275,6 +275,8 @@ module Sweetcheese_switch
          
          #@line = $'   
         end
+        else
+          @temp_n = @line
       end
       @h = @g
   end
@@ -292,6 +294,7 @@ module Sweetcheese_switch
       
       raw << Hua_point.new
       raw.last.n << @temp_n if @temp_n
+      
       raw.last.z << @temp_z if @temp_z
       @temp_n,@temp_z,@totalx=nil,nil,0
       
@@ -348,7 +351,6 @@ module Sweetcheese_switch
       raw << Hua_point.new
       raw.last.n << @temp_n if @temp_n
       raw.last.z << @temp_z if @temp_z
-      
       @temp_n,@temp_z,@totalx=nil,nil,0
       
       ###
@@ -463,8 +465,8 @@ module Sweetcheese_switch
     param.kai_indz||=[]
     param.kai_indn||=[]
     @check2 = false
-    #switch_dump_comment
     send("switch_data_"+@ldr.to_s) 
+    
     @line && (@temp_current[@ldr] = @line) && @line=nil 
      
     #info_line ="" ;@temp_current.each_pair{|k ,v| info_line << k.inspect+" "*(20-k.size)+"  =  "+v.inspect}

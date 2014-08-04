@@ -170,8 +170,8 @@ class Rapere<Array
     Ropere.new(h)  
     
    
-  end
-end
+  end #to_ro
+end #of class Rapere
 
 class Ropere<Hash
   attr_reader :dim
@@ -356,9 +356,10 @@ class Ropere<Hash
     ##type XYDATA
      
      rp= self[:raw_point]
+     
      rp.each_with_index{|e,i| if self[:XYDATA] || self[:'XYPOINTS'] || self[:'DATA TABLE'] || self[:'PEAK TABLE']
                               self[:flotr2_point][i]=Array.new(e.size)
-                              for j in page
+                              for j in 0..e.size-1
                               (d=e[j]) && d[:x] && d[:y] && self[:flotr2_point][i][j]=d.xy   
                               end  
                               end}
@@ -399,19 +400,18 @@ class Ropere<Hash
        h.kai_BLOCK_ID[q]=self[:kai_BLOCK_ID][i]
        h.xaxis_reversed[q]=(self[:x_reversed] && self[:x_reversed][i]) || Array.new(h.xy[q].size).map{|e| false}
        temp={}
-       self[:ldr][i].each{|s| self[s].is_a?(Array) && self[s][i]  && temp[s]=self[s][i].join("\n")}
+       self[:ldr][i].each{|v| self[v].is_a?(Array) && self[v][i]  && temp[v]=self[v][i].join("\n")}
        h.ldr[q]= temp ##.to_json
        
-       [:SYMBOL,:VAR_NAME,:kUNITS,:UNITS,:FACTOR,:kFACTOR].each{|s| 
-                                                h[s][q]=[]
-                                                ixy.each{|j|h[s][q]<<[self[s][i][j[0]],self[s][i][j[1]]]}
+       [:SYMBOL,:VAR_NAME,:kUNITS,:UNITS,:FACTOR,:kFACTOR].each{|v| 
+                                                h[v][q]=[]
+                                                ixy.each{|j|h[v][q]<<[self[v][i][j[0]],self[v][i][j[1]]]}
                                                 }
         r=self[:raw_point][i]
         temp=Array.new(r.size)
-        [:page,:z].each{|s| h[s][i]=Array.new(r.size)}
-        r.each_with_index{|e,j| h.page[q][j]=r[j][:n]
-                                    h.z[q]  =r[j][:z]}
-      
+        [:page,:z].each{|v| h[v][i]=Array.new(r.size)}
+        r.each_with_index{ |e,j|    h.page[q][j] = e[:n]
+                                       h.z[q][j] = e[:z]}
                           }
      #################
      
@@ -420,9 +420,10 @@ class Ropere<Hash
      ###################
      Kumara.new(h)
    
-   end# of method to_ro
+   end# of method to_kumara
       
-end #of class
+      
+end #of class Ropere
  
 Moa=Struct.new(:TITLE,:TYPE,:CLASS,:SYMBOL,:VAR_NAME,:indx,:indy,:indz,:indn,:xaxis_reversed,:kUNITS,:UNITS,:FACTOR,:kFACTOR,:page,:z,:xy,:kai_BLOCK_ID,:ldr)
 
@@ -518,8 +519,10 @@ class Kumara<Moa  #<Ropere# #todo structure vs Hash
    kaka=self.slice(block)
    
    
-   [:TYPE,:SYMBOL,:xaxis_reversed,:kUNITS,:UNITS,:FACTOR,:kFACTOR,:xy,:z,:page].each{|m| kaka[m]=kaka[m][page]}
-   
+   [:TYPE,:SYMBOL,:xaxis_reversed,:kUNITS,:UNITS,:FACTOR,:kFACTOR,:xy,:z,:page].each{|m| 
+     puts m.inspect+" "+kaka[m].inspect.slice(0..60)
+     kaka[m]=kaka[m][page]}
+   puts kaka.xy.inspect.slice(0..60)
    kaka.xy=kaka.xy.trim_point(r,limit)
  # Moa.members.each{|m|   puts "Kumara chip"+m.inspect+" = "+kaka[m].inspect.slice(0..60) }
  # kaka[:ldr].each_pair{|s,v| puts "Kumara chip ldr :"+s.inspect+" = "+v.inspect.slice(0..60)}
@@ -529,9 +532,26 @@ class Kumara<Moa  #<Ropere# #todo structure vs Hash
    end
 
 
-  
+  def selection_header
+    h={}
+    arr=[]
+    [:TITLE, :CLASS,:TYPE, :page].each_with_index{|s,i| h[s] = self[s]
+                                            arr[i]=self[s]}
+    puts arr.inspect
+    arr=arr.transpose
+    puts arr.inspect      
+    ar=Array.new
+    arr.each_with_index{|l,li| 
+                        for i in 0..(l[2].flatten.size-1) do
+                         ar<<[l[0],l[1].flatten[i],l[2].flatten[i],l[3].flatten[i],"#{li},#{i}"]
+                         #ar<<[l[0],l[1].flatten[i],l[2].flatten[i],l[3].flatten[i],"#{li},#{i}"]
+                         puts " "+li.inspect+" "+i.inspect+ ar.inspect
+                         end }          
+                                                
+    ar
+  end
 
   
-end #of class Moa
+end #of class Kumara<Moa
 
 end #end of module

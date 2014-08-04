@@ -1,3 +1,3 @@
 module Kaitatari
-  VERSION = "0.0.2.27"
+  VERSION = "0.0.2.30"
 end
